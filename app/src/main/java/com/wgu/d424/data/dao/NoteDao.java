@@ -43,4 +43,12 @@ public interface NoteDao {
     @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
     Note getNoteById(int id);
 
+    @Query("SELECT * FROM notes " +
+            "WHERE (:keyword = '' OR content LIKE '%' || :keyword || '%') " +
+            "AND (:category = 'All' OR category = :category) " +
+            "AND (:startDate = 0 OR createdAt >= :startDate) " +
+            "AND (:endDate = 0 OR createdAt <= :endDate) " +
+            "ORDER BY createdAt DESC")
+    List<Note> searchNotes(String keyword, String category, long startDate, long endDate);
+
 }
