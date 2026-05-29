@@ -11,16 +11,16 @@ public class Note {
 
     private String category;
     private String content;
-    private String inputType; // "MANUAL" or "VOICE"
     private long createdAt;
     private long updatedAt;
+    private boolean isPrivate;
 
-    public Note(String category, String content, String inputType, long createdAt, long updatedAt) {
+    public Note(String category, String content, long createdAt, long updatedAt, boolean isPrivate) {
         this.category = category;
         this.content = content;
-        this.inputType = inputType;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.isPrivate = isPrivate;
     }
 
     public int getId() {
@@ -39,10 +39,6 @@ public class Note {
         return content;
     }
 
-    public String getInputType() {
-        return inputType;
-    }
-
     public long getCreatedAt() {
         return createdAt;
     }
@@ -59,10 +55,6 @@ public class Note {
         this.content = content;
     }
 
-    public void setInputType(String inputType) {
-        this.inputType = inputType;
-    }
-
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
     }
@@ -70,4 +62,7 @@ public class Note {
     public void setUpdatedAt(long updatedAt) {
         this.updatedAt = updatedAt;
     }
+
+    public void setIsPrivate(boolean isPrivate) { this.isPrivate = isPrivate; }
+    public boolean getIsPrivate() { return this.isPrivate; }
 }

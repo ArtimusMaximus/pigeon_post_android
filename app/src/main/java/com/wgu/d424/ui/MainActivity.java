@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.widget.CheckBox;
 import android.widget.Toast;
 
 import androidx.appcompat.content.res.AppCompatResources;
@@ -35,12 +36,27 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.wgu.d424.R;
+import com.wgu.d424.data.dao.NoteDao;
+import com.wgu.d424.data.db.AppDatabase;
+import com.wgu.d424.data.entities.Note;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.wgu.d424.adapters.RecentNotesAdapter;
+import com.wgu.d424.data.db.AppDatabase;
+import com.wgu.d424.data.entities.Note;
+
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 100;
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
     private TextInputEditText editNote;
+    private RecentNotesAdapter recentNotesAdapter;
+    private RecyclerView recyclerRecentNotes;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +68,15 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+//        GATHER RECENT NOTES
+        recyclerRecentNotes = findViewById(R.id.recyclerRecentNotes);
+        recentNotesAdapter = new RecentNotesAdapter(note -> {
+            showNoteDialog(note);
+        });
+        recyclerRecentNotes.setLayoutManager(new LinearLayoutManager(this));
+        recyclerRecentNotes.setAdapter(recentNotesAdapter);
+        loadRecentNotes();
+
 
 //        GET DROPDOWN MENU
         AutoCompleteTextView categoryDropDownMenu = findViewById(R.id.dropdownCategory);
@@ -75,8 +100,8 @@ public class MainActivity extends AppCompatActivity {
 //        NOTE TEXT AREA
         editNote = findViewById(R.id.editNote);
 
+//        SET UP NATIVE SPEECH TO TEXT
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-
         speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         speechRecognizerIntent.putExtra(
                 RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -96,7 +121,6 @@ public class MainActivity extends AppCompatActivity {
             public void onReadyForSpeech(Bundle params) {
                 Toast.makeText(MainActivity.this, "Listening...", Toast.LENGTH_SHORT).show();
             }
-
             @Override
             public void onBeginningOfSpeech() {}
 
@@ -150,8 +174,44 @@ public class MainActivity extends AppCompatActivity {
 
         recordButton.setOnClickListener(v -> {
             startSpeechToText();
-
             setTextAndTint(recordButton);
+        });
+
+//        SAVE NOTE TO DATABASE
+        MaterialButton saveNoteBtn = findViewById(R.id.btnSaveNote);
+        saveNoteBtn.setOnClickListener(view -> {
+            CheckBox privateChecked = findViewById(R.id.checkPrivateNote);
+            boolean isPrivateChecked = privateChecked.isChecked();
+            new Thread(() -> {
+                AppDatabase db = AppDatabase.getDatabase(this);
+//                String category, String content, long createdAt, long updatedAt, boolean isPrivate
+                String category = categoryDropDownMenu.getText().toString().trim();
+                String noteText = "";
+
+                if (editNote.getText().toString().isEmpty()) {
+                    Toast.makeText(this, "Enter a note, no empty notes are allowed!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (!editNote.getText().toString().isEmpty()) {
+                    noteText = editNote.getText().toString().trim();
+                }
+
+                Note note = new Note(
+                        category,
+                        noteText,
+                        System.currentTimeMillis(),
+                        System.currentTimeMillis(),
+                        isPrivateChecked
+                );
+                db.noteDao().insert(note);
+
+                runOnUiThread(() -> {
+                    editNote.getText().clear();
+                    privateChecked.setChecked(false);
+                    Toast.makeText(this, "Note successfully saved to the database!", Toast.LENGTH_SHORT).show();
+                    loadRecentNotes();
+                });
+            }).start();
         });
 
     }
@@ -208,5 +268,20 @@ public class MainActivity extends AppCompatActivity {
                         ContextCompat.getColor(this, R.color.red)
                 )
         );
+    }
+
+    private void loadRecentNotes() {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getDatabase(this);
+            List<Note> recentNotes = db.noteDao().getTopFiveRecentPublicNotes();
+            runOnUiThread(() -> { recentNotesAdapter.setNotes(recentNotes); });
+        }).start();
+    }
+    private void  showNoteDialog(Note note) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle(note.getCategory())
+                .setMessage(note.getContent())
+                .setPositiveButton("Close", null)
+                .show();
     }
 }

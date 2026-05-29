@@ -73,7 +73,11 @@
             android:gravity="top"
             android:inputType="textMultiLine"
             android:maxLines="5" />
-
+        <CheckBox
+            android:id="@+id/checkPrivateNote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Private note" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -118,12 +122,12 @@
 
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCreateNote"
+            android:id="@+id/btnSaveNote"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:text="Create Note"
+            android:text="@string/btn_save_note"
             app:cornerRadius="16dp" />
 
         <com.google.android.material.button.MaterialButton

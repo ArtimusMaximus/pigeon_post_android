@@ -22,21 +22,25 @@ public interface NoteDao {
     @Delete
     void delete(Note note);
 
-    @Query("SELECT * FROM notes ORDER BY createdAt DESC")
-    List<Note> getAllNotes();
+    @Query("SELECT * FROM notes WHERE isPrivate = 0 ORDER BY createdAt DESC")
+    List<Note> getAllPublicNotes();
 
-    @Query("SELECT * FROM notes ORDER BY createdAt DESC LIMIT 5")
-    List<Note> getTopFiveRecentNotes();
+    @Query("SELECT * FROM notes WHERE isPrivate = 1 ORDER BY createdAt DESC")
+    List<Note> getAllPrivateNotes();
 
-    @Query("SELECT * FROM notes WHERE category = :category ORDER BY createdAt DESC")
+    @Query("SELECT * FROM notes WHERE isPrivate = 0 ORDER BY createdAt DESC LIMIT 5")
+    List<Note> getTopFiveRecentPublicNotes();
+
+    @Query("SELECT * FROM notes WHERE category = :category AND isPrivate = 0 ORDER BY createdAt DESC")
     List<Note> getNotesByCategory(String category);
 
-    @Query("SELECT * FROM notes WHERE content LIKE '%' || :keyword || '%' ORDER BY createdAt DESC")
+    @Query("SELECT * FROM notes WHERE content LIKE '%' || :keyword || '%' AND isPrivate = 0 ORDER BY createdAt DESC")
     List<Note> searchNotesByKeyword(String keyword);
 
-    @Query("SELECT * FROM notes WHERE createdAt BETWEEN :startDate AND :endDate ORDER BY createdAt DESC")
+    @Query("SELECT * FROM notes WHERE createdAt BETWEEN :startDate AND :endDate AND isPrivate = 0 ORDER BY createdAt DESC")
     List<Note> getNotesByDateRange(long startDate, long endDate);
 
     @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
     Note getNoteById(int id);
+
 }
