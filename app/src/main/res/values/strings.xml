@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">D424</string>
+<!--    TITLES-->
+    <string name="app_title">Homing Pigeon</string>
+    <string name="app_sub_title">Pigeon Post</string>
+<!--    BUTTONS-->
+    <string name="btn_record_note">Record Note</string>
+    <string name="btn_save_note">Save Note</string>
+
+    <!--    MISC-->
+    <string name="misc_recording">Recording&#8230;</string>
+
+</resources>
