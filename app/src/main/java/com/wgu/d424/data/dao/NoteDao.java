@@ -32,6 +32,9 @@ public interface NoteDao {
     @Query("SELECT * FROM notes WHERE isPrivate = 0 ORDER BY createdAt DESC LIMIT 5")
     List<Note> getTopFiveRecentPublicNotes();
 
+    @Query("SELECT * FROM notes ORDER BY createdAt DESC LIMIT 5")
+    List<Note> getTopFiveRecentNotes();
+
     @Query("SELECT * FROM notes WHERE category = :category AND isPrivate = 0 ORDER BY createdAt DESC")
     List<Note> getNotesByCategory(String category);
 

@@ -14,7 +14,10 @@ import android.content.pm.PackageManager;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.appcompat.content.res.AppCompatResources;
@@ -47,6 +50,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.wgu.d424.adapters.RecentNotesAdapter;
 import com.wgu.d424.data.db.AppDatabase;
 import com.wgu.d424.data.entities.Note;
+import com.wgu.d424.data.entities.Profile;
+import com.wgu.d424.utils.SecurityUtils;
 
 import java.util.List;
 
@@ -71,7 +76,11 @@ public class MainActivity extends AppCompatActivity {
 //        GATHER RECENT NOTES
         recyclerRecentNotes = findViewById(R.id.recyclerRecentNotes);
         recentNotesAdapter = new RecentNotesAdapter(note -> {
-            showNoteDialog(note);
+            if (note.getIsPrivate()) {
+                showPrivateKeyPrompt(note);
+            } else {
+                showNoteDialog(note);
+            }
         });
         recyclerRecentNotes.setLayoutManager(new LinearLayoutManager(this));
         recyclerRecentNotes.setAdapter(recentNotesAdapter);
@@ -94,6 +103,13 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+//        NAVIGATE TO PROFILE ACTIVITY
+        ImageButton profileBtn = findViewById(R.id.btnProfile);
+
+        profileBtn.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
 //        HANDLE RECORD NOTE BUTTON
         MaterialButton recordButton = findViewById(R.id.btnRecordNote);
 
@@ -180,40 +196,27 @@ public class MainActivity extends AppCompatActivity {
 //        SAVE NOTE TO DATABASE
         MaterialButton saveNoteBtn = findViewById(R.id.btnSaveNote);
         saveNoteBtn.setOnClickListener(view -> {
+
             CheckBox privateChecked = findViewById(R.id.checkPrivateNote);
             boolean isPrivateChecked = privateChecked.isChecked();
-            new Thread(() -> {
-                AppDatabase db = AppDatabase.getDatabase(this);
-//                String category, String content, long createdAt, long updatedAt, boolean isPrivate
-                String category = categoryDropDownMenu.getText().toString().trim();
-                String noteText = "";
 
-                if (editNote.getText().toString().isEmpty()) {
-                    Toast.makeText(this, "Enter a note, no empty notes are allowed!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (!editNote.getText().toString().isEmpty()) {
-                    noteText = editNote.getText().toString().trim();
-                }
+            String category = categoryDropDownMenu.getText().toString().trim();
+            String noteText = editNote.getText().toString().trim();
 
-                Note note = new Note(
-                        category,
-                        noteText,
-                        System.currentTimeMillis(),
-                        System.currentTimeMillis(),
-                        isPrivateChecked
-                );
-                db.noteDao().insert(note);
-
-                runOnUiThread(() -> {
-                    editNote.getText().clear();
-                    privateChecked.setChecked(false);
-                    Toast.makeText(this, "Note successfully saved to the database!", Toast.LENGTH_SHORT).show();
-                    loadRecentNotes();
-                });
-            }).start();
+            if (noteText.isEmpty()) {
+                Toast.makeText(
+                        this,
+                        "Enter a note, no empty notes are allowed!",
+                        Toast.LENGTH_SHORT
+                ).show();
+                return;
+            }
+            if (isPrivateChecked) {
+                checkProfileAndSavePrivateNote(category, noteText, privateChecked);
+            } else {
+                saveNote(category, noteText, false, privateChecked);
+            }
         });
-
     }
 
     private void startSpeechToText() {
@@ -273,7 +276,7 @@ public class MainActivity extends AppCompatActivity {
     private void loadRecentNotes() {
         new Thread(() -> {
             AppDatabase db = AppDatabase.getDatabase(this);
-            List<Note> recentNotes = db.noteDao().getTopFiveRecentPublicNotes();
+            List<Note> recentNotes = db.noteDao().getTopFiveRecentNotes();
             runOnUiThread(() -> { recentNotesAdapter.setNotes(recentNotes); });
         }).start();
     }
@@ -283,5 +286,176 @@ public class MainActivity extends AppCompatActivity {
                 .setMessage(note.getContent())
                 .setPositiveButton("Close", null)
                 .show();
+    }
+    private void saveNote(String category, String noteText, boolean isPrivate, CheckBox privateChecked) {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getDatabase(this);
+
+            Note note = new Note(
+                    category,
+                    noteText,
+                    System.currentTimeMillis(),
+                    System.currentTimeMillis(),
+                    isPrivate
+            );
+            db.noteDao().insert(note);
+
+            runOnUiThread(() -> {
+                editNote.getText().clear();
+                privateChecked.setChecked(false);
+                Toast.makeText(this, "Note successfully saved to the database!", Toast.LENGTH_SHORT).show();
+                loadRecentNotes();
+            });
+        }).start();
+    }
+    private void checkProfileAndSavePrivateNote(String category, String noteText, CheckBox privateChecked) {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getDatabase(this);
+
+            boolean profileExists = db.profileDao().profileExists() > 0;
+            runOnUiThread(() -> {
+                if (!profileExists) {
+                    showCreateSecurityProfileDialog(
+                            category,
+                            noteText,
+                            privateChecked
+                    );
+                } else {
+                    saveNote(
+                            category,
+                            noteText,
+                            true,
+                            privateChecked
+                    );
+                }
+            });
+        }).start();
+    }
+
+    private void showCreateSecurityProfileDialog(
+            String category,
+            String noteText,
+            CheckBox privateChecked
+    ) {
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(48, 16, 48, 0);
+
+        TextInputEditText emailInput = new TextInputEditText(this);
+        emailInput.setHint("Recovery email");
+        emailInput.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+
+        TextInputEditText pinInput = new TextInputEditText(this);
+        pinInput.setHint("Create 4-digit PIN");
+        pinInput.setInputType(
+                android.text.InputType.TYPE_CLASS_NUMBER |
+                        android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        );
+
+        container.addView(emailInput);
+        container.addView(pinInput);
+
+        androidx.appcompat.app.AlertDialog dialog =
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle("Create Security Profile")
+                        .setMessage("Private notes require a recovery email and 4-digit PIN.")
+                        .setView(container)
+                        .setPositiveButton("Save", null)
+                        .setNegativeButton("Cancel", (d, which) -> {
+                            privateChecked.setChecked(false);
+                        })
+                        .create();
+
+        dialog.setOnShowListener(d -> {
+            dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                    .setOnClickListener(v -> {
+
+                        String email = emailInput.getText() == null
+                                ? ""
+                                : emailInput.getText().toString().trim();
+
+                        String pin = pinInput.getText() == null
+                                ? ""
+                                : pinInput.getText().toString().trim();
+
+                        if (!SecurityUtils.isValidEmail(email)) {
+                            emailInput.setError("Enter a valid email address");
+                            return;
+                        }
+
+                        if (!SecurityUtils.isValidFourDigitPin(pin)) {
+                            pinInput.setError("PIN must be exactly 4 digits");
+                            return;
+                        }
+
+                        String pinHash = SecurityUtils.hashPin(pin);
+
+                        new Thread(() -> {
+                            AppDatabase db = AppDatabase.getDatabase(this);
+
+                            Profile profile = new Profile(email, pinHash);
+                            db.profileDao().saveProfile(profile);
+
+                            runOnUiThread(() -> {
+                                dialog.dismiss();
+
+                                saveNote(
+                                        category,
+                                        noteText,
+                                        true,
+                                        privateChecked
+                                );
+
+                                Toast.makeText(
+                                        this,
+                                        "Security profile created.",
+                                        Toast.LENGTH_SHORT
+                                ).show();
+                            });
+                        }).start();
+                    });
+        });
+
+        dialog.show();
+    }
+    private void showPrivateKeyPrompt(Note note) {
+        TextInputEditText input = new TextInputEditText(this);
+        input.setHint("Enter 4-digit PIN");
+        input.setInputType(
+                android.text.InputType.TYPE_CLASS_NUMBER |
+                        android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        );
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Private Note")
+                .setMessage("Enter your private PIN to view this note.")
+                .setView(input)
+                .setPositiveButton("Unlock", (dialog, which) -> {
+                    String enteredPin = input.getText() == null
+                            ? ""
+                            : input.getText().toString().trim();
+
+                    verifyPinAndShowNote(enteredPin, note);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    private void verifyPinAndShowNote(String enteredPin, Note note) {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getDatabase(this);
+            Profile profile = db.profileDao().getProfile();
+
+            boolean isCorrect = profile != null
+                    && profile.getPinHash() != null
+                    && profile.getPinHash().equals(SecurityUtils.hashPin(enteredPin));
+
+            runOnUiThread(() -> {
+                if (isCorrect) {
+                    showNoteDialog(note);
+                } else {
+                    Toast.makeText(this, "Incorrect PIN.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }).start();
     }
 }

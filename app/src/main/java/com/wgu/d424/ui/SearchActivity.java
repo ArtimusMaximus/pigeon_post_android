@@ -304,7 +304,7 @@ public class SearchActivity extends AppCompatActivity {
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Private Note")
-                .setMessage("Enter your private key to view this note.")
+                .setMessage("Enter your private key '1234' to view this note.")
                 .setView(input)
                 .setPositiveButton("Unlock", (dialog, which) -> {
                     String enteredKey = input.getText() == null

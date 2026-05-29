@@ -9,16 +9,55 @@
     android:padding="24dp"
     tools:context=".ui.MainActivity">
 
-    <ImageView
-        android:id="@+id/imgAppHeader"
-        android:layout_width="96dp"
-        android:layout_height="96dp"
+    <LinearLayout
+        android:id="@+id/headerRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:contentDescription="Homing Pigeon app icon"
-        android:src="@mipmap/ic_launcher"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/imgAppHeader"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:contentDescription="Homing Pigeon app icon"
+            android:src="@mipmap/ic_launcher" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Homing Pigeon"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Voice and Text Notes"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnProfile"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Profile"
+            android:src="@drawable/ic_settings_24" />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/txtRecentNotesTitle"
@@ -44,7 +83,7 @@
         app:endIconMode="dropdown_menu"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/imgAppHeader">
+        app:layout_constraintTop_toBottomOf="@id/headerRow">
 
         <AutoCompleteTextView
             android:id="@+id/dropdownCategory"
@@ -119,8 +158,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-
-
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveNote"
             android:layout_width="0dp"
@@ -138,6 +175,15 @@
             android:layout_weight="1"
             android:text="Search Notes"
             app:cornerRadius="16dp" />
+
+<!--        <com.google.android.material.button.MaterialButton-->
+<!--            android:id="@+id/btnProfile"-->
+<!--            android:layout_width="0dp"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginStart="8dp"-->
+<!--            android:layout_weight="1"-->
+<!--            android:text="Profile / About"-->
+<!--            app:cornerRadius="16dp" />-->
 
     </LinearLayout>
 
