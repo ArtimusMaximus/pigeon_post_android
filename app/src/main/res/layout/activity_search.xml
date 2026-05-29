@@ -88,17 +88,6 @@
 
     </LinearLayout>
 
-<!--    <com.google.android.material.button.MaterialButton-->
-<!--        android:id="@+id/btnSearch"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginTop="16dp"-->
-<!--        android:minHeight="52dp"-->
-<!--        android:text="Search"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/dateButtonRow"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent" />-->
-
     <TextView
         android:id="@+id/txtSearchResultsTitle"
         android:layout_width="0dp"
@@ -138,16 +127,16 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:text="Back" />
 
-<!--        <com.google.android.material.button.MaterialButton-->
-<!--            android:id="@+id/btn_test_notification"-->
-<!--            android:layout_width="0dp"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginStart="8dp"-->
-<!--            android:layout_weight="1"-->
-<!--            android:text="Test Notification" />-->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_report"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Run Report" />
 
     </LinearLayout>
 

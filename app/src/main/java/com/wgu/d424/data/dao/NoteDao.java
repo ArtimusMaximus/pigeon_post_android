@@ -7,6 +7,7 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import com.wgu.d424.data.entities.Note;
+import com.wgu.d424.data.entities.CategoryCount;
 
 import java.util.List;
 
@@ -50,5 +51,23 @@ public interface NoteDao {
             "AND (:endDate = 0 OR createdAt <= :endDate) " +
             "ORDER BY createdAt DESC")
     List<Note> searchNotes(String keyword, String category, long startDate, long endDate);
+
+    @Query("SELECT COUNT(*) FROM notes")
+    int getTotalNoteCount();
+
+    @Query("SELECT category, COUNT(*) as noteCount FROM notes GROUP BY category ORDER BY noteCount DESC")
+    List<CategoryCount> getNoteCountByCategory();
+
+    @Query("SELECT MIN(createdAt) FROM notes")
+    Long getOldestNoteDate();
+
+    @Query("SELECT MAX(createdAt) FROM notes")
+    Long getNewestNoteDate();
+
+    @Query("SELECT category FROM notes GROUP BY category ORDER BY COUNT(*) DESC LIMIT 1")
+    String getMostUsedCategory();
+
+    @Query("SELECT AVG(LENGTH(content)) FROM notes")
+    Double getAverageNoteLength();
 
 }

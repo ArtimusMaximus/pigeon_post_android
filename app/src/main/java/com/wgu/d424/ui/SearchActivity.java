@@ -28,6 +28,14 @@ import com.wgu.d424.data.entities.Note;
 import java.util.Calendar;
 import java.util.List;
 
+import android.widget.LinearLayout;
+import android.widget.CheckBox;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.view.Gravity;
+
+import com.google.android.material.textfield.TextInputEditText;
+
 public class SearchActivity extends AppCompatActivity {
 
     private TextInputEditText editSearchKeyword;
@@ -66,6 +74,12 @@ public class SearchActivity extends AppCompatActivity {
 
         MaterialButton backBtn = findViewById(R.id.btn_back);
         backBtn.setOnClickListener(view -> finish());
+
+        MaterialButton reportBtn = findViewById(R.id.btn_report);
+        reportBtn.setOnClickListener(view -> {
+            Intent intent = new Intent(SearchActivity.this, ReportActivity.class);
+            startActivity(intent);
+        });
 
         loadSearchResults();
     }
@@ -200,7 +214,86 @@ public class SearchActivity extends AppCompatActivity {
                 .setTitle(note.getCategory())
                 .setMessage(note.getContent())
                 .setPositiveButton("Close", null)
+                .setNegativeButton("Edit", (dialog, which) -> {
+                    showEditNoteDialog(note);
+                })
                 .show();
+    }
+
+    private void showEditNoteDialog(Note note) {
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(32, 16, 32, 0);
+
+        AutoCompleteTextView categoryDropdown = new AutoCompleteTextView(this);
+        String[] categories = {
+                "Business",
+                "Personal",
+                "Idea",
+                "Reminder",
+                "Health",
+                "Other"
+        };
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                categories
+        );
+
+        categoryDropdown.setAdapter(adapter);
+        categoryDropdown.setText(note.getCategory(), false);
+        categoryDropdown.setInputType(0);
+
+        TextInputEditText noteInput = new TextInputEditText(this);
+        noteInput.setHint("Note");
+        noteInput.setText(note.getContent());
+        noteInput.setMinLines(4);
+        noteInput.setMaxLines(8);
+        noteInput.setGravity(android.view.Gravity.TOP);
+
+        CheckBox privateCheckBox = new CheckBox(this);
+        privateCheckBox.setText("Private note");
+        privateCheckBox.setChecked(note.getIsPrivate());
+
+        container.addView(categoryDropdown);
+        container.addView(noteInput);
+        container.addView(privateCheckBox);
+
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Edit Note")
+                .setView(container)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String updatedCategory = categoryDropdown.getText().toString().trim();
+                    String updatedContent = noteInput.getText() == null
+                            ? ""
+                            : noteInput.getText().toString().trim();
+
+                    if (updatedContent.isEmpty()) {
+                        Toast.makeText(this, "Note cannot be empty.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    note.setCategory(updatedCategory);
+                    note.setContent(updatedContent);
+                    note.setIsPrivate(privateCheckBox.isChecked());
+                    note.setUpdatedAt(System.currentTimeMillis());
+
+                    updateNote(note);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    private void updateNote(Note note) {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getDatabase(this);
+            db.noteDao().update(note);
+
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Note updated successfully.", Toast.LENGTH_SHORT).show();
+                loadSearchResults();
+            });
+        }).start();
     }
 
     private void showPrivateKeyPrompt(Note note) {

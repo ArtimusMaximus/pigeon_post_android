@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import com.wgu.d424.data.dao.NoteDao;
 import com.wgu.d424.data.entities.Note;
 
-@Database(entities = {Note.class}, version = 3, exportSchema = false)
+@Database(entities = {Note.class}, version = 4, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase instance;
     public abstract NoteDao noteDao();
