@@ -40,24 +40,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text" />
+
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/searchCategoryLayout"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/txtSearchCategoryLabel"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Search by category"
-            app:boxBackgroundMode="outline"
-            app:endIconMode="dropdown_menu">
+            android:text="Filter by category" />
 
-            <AutoCompleteTextView
-                android:id="@+id/dropdownSearchCategory"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
-                 />
-        </com.google.android.material.textfield.TextInputLayout>
+        <Spinner
+            android:id="@+id/spinnerSearchCategory"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnStartDate"
@@ -100,7 +97,9 @@
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="Report" />
+
         </LinearLayout>
+
     </LinearLayout>
 
     <TextView

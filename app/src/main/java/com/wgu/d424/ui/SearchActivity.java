@@ -5,8 +5,11 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
+import android.widget.CheckBox;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -28,18 +31,10 @@ import com.wgu.d424.data.entities.Note;
 import java.util.Calendar;
 import java.util.List;
 
-import android.widget.LinearLayout;
-import android.widget.CheckBox;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.view.Gravity;
-
-import com.google.android.material.textfield.TextInputEditText;
-
 public class SearchActivity extends AppCompatActivity {
 
     private TextInputEditText editSearchKeyword;
-    private AutoCompleteTextView dropdownSearchCategory;
+    private Spinner spinnerSearchCategory;
     private MaterialButton btnStartDate;
     private MaterialButton btnEndDate;
     private RecentNotesAdapter searchAdapter;
@@ -47,8 +42,26 @@ public class SearchActivity extends AppCompatActivity {
     private long startDateMillis = 0;
     private long endDateMillis = 0;
 
-    // Temporary. Later, store/retrieve this from SharedPreferences.
     private static final String PRIVATE_KEY = "1234";
+
+    private final String[] searchCategories = {
+            "All",
+            "Business",
+            "Personal",
+            "Idea",
+            "Reminder",
+            "Health",
+            "Other"
+    };
+
+    private final String[] noteCategories = {
+            "Business",
+            "Personal",
+            "Idea",
+            "Reminder",
+            "Health",
+            "Other"
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,46 +76,32 @@ public class SearchActivity extends AppCompatActivity {
         });
 
         editSearchKeyword = findViewById(R.id.editSearchKeyword);
-        dropdownSearchCategory = findViewById(R.id.dropdownSearchCategory);
+        spinnerSearchCategory = findViewById(R.id.spinnerSearchCategory);
         btnStartDate = findViewById(R.id.btnStartDate);
         btnEndDate = findViewById(R.id.btnEndDate);
 
-        setupCategoryDropdown();
+        setupCategorySpinner();
         setupRecyclerView();
         setupSearchListeners();
         setupDateButtons();
-
-        MaterialButton backBtn = findViewById(R.id.btn_back);
-        backBtn.setOnClickListener(view -> finish());
-
-        MaterialButton reportBtn = findViewById(R.id.btn_report);
-        reportBtn.setOnClickListener(view -> {
-            Intent intent = new Intent(SearchActivity.this, ReportActivity.class);
-            startActivity(intent);
-        });
+        setupNavigationButtons();
 
         loadSearchResults();
     }
 
-    private void setupCategoryDropdown() {
-        String[] categories = {
-                "All",
-                "Business",
-                "Personal",
-                "Idea",
-                "Reminder",
-                "Health",
-                "Other"
-        };
-
+    private void setupCategorySpinner() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 this,
-                android.R.layout.simple_dropdown_item_1line,
-                categories
+                android.R.layout.simple_spinner_item,
+                searchCategories
         );
 
-        dropdownSearchCategory.setAdapter(adapter);
-        dropdownSearchCategory.setText(categories[0], false);
+        adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+        spinnerSearchCategory.setAdapter(adapter);
+        spinnerSearchCategory.setSelection(0);
     }
 
     private void setupRecyclerView() {
@@ -123,10 +122,20 @@ public class SearchActivity extends AppCompatActivity {
     private void setupSearchListeners() {
         editSearchKeyword.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(
+                    CharSequence s,
+                    int start,
+                    int count,
+                    int after
+            ) {}
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            public void onTextChanged(
+                    CharSequence s,
+                    int start,
+                    int before,
+                    int count
+            ) {
                 loadSearchResults();
             }
 
@@ -134,17 +143,38 @@ public class SearchActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        dropdownSearchCategory.setOnItemClickListener((parent, view, position, id) -> {
-            loadSearchResults();
-        });
+        spinnerSearchCategory.setOnItemSelectedListener(
+                new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(
+                            AdapterView<?> parent,
+                            android.view.View view,
+                            int position,
+                            long id
+                    ) {
+                        loadSearchResults();
+                    }
 
-//        MaterialButton btnSearch = findViewById(R.id.btnSearch);
-//        btnSearch.setOnClickListener(view -> loadSearchResults());
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {}
+                }
+        );
     }
 
     private void setupDateButtons() {
         btnStartDate.setOnClickListener(view -> showDatePicker(true));
         btnEndDate.setOnClickListener(view -> showDatePicker(false));
+    }
+
+    private void setupNavigationButtons() {
+        MaterialButton backBtn = findViewById(R.id.btn_back);
+        backBtn.setOnClickListener(view -> finish());
+
+        MaterialButton reportBtn = findViewById(R.id.btn_report);
+        reportBtn.setOnClickListener(view -> {
+            Intent intent = new Intent(SearchActivity.this, ReportActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void showDatePicker(boolean isStartDate) {
@@ -191,9 +221,9 @@ public class SearchActivity extends AppCompatActivity {
                 ? ""
                 : editSearchKeyword.getText().toString().trim();
 
-        String category = dropdownSearchCategory.getText() == null
+        String category = spinnerSearchCategory.getSelectedItem() == null
                 ? "All"
-                : dropdownSearchCategory.getText().toString().trim();
+                : spinnerSearchCategory.getSelectedItem().toString();
 
         new Thread(() -> {
             AppDatabase db = AppDatabase.getDatabase(this);
@@ -225,25 +255,26 @@ public class SearchActivity extends AppCompatActivity {
         container.setOrientation(LinearLayout.VERTICAL);
         container.setPadding(32, 16, 32, 0);
 
-        AutoCompleteTextView categoryDropdown = new AutoCompleteTextView(this);
-        String[] categories = {
-                "Business",
-                "Personal",
-                "Idea",
-                "Reminder",
-                "Health",
-                "Other"
-        };
+        Spinner categorySpinner = new Spinner(this);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 this,
-                android.R.layout.simple_dropdown_item_1line,
-                categories
+                android.R.layout.simple_spinner_item,
+                noteCategories
         );
 
-        categoryDropdown.setAdapter(adapter);
-        categoryDropdown.setText(note.getCategory(), false);
-        categoryDropdown.setInputType(0);
+        adapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+        categorySpinner.setAdapter(adapter);
+
+        for (int i = 0; i < noteCategories.length; i++) {
+            if (noteCategories[i].equalsIgnoreCase(note.getCategory())) {
+                categorySpinner.setSelection(i);
+                break;
+            }
+        }
 
         TextInputEditText noteInput = new TextInputEditText(this);
         noteInput.setHint("Note");
@@ -256,7 +287,7 @@ public class SearchActivity extends AppCompatActivity {
         privateCheckBox.setText("Private note");
         privateCheckBox.setChecked(note.getIsPrivate());
 
-        container.addView(categoryDropdown);
+        container.addView(categorySpinner);
         container.addView(noteInput);
         container.addView(privateCheckBox);
 
@@ -264,13 +295,19 @@ public class SearchActivity extends AppCompatActivity {
                 .setTitle("Edit Note")
                 .setView(container)
                 .setPositiveButton("Save", (dialog, which) -> {
-                    String updatedCategory = categoryDropdown.getText().toString().trim();
+                    String updatedCategory =
+                            categorySpinner.getSelectedItem().toString();
+
                     String updatedContent = noteInput.getText() == null
                             ? ""
                             : noteInput.getText().toString().trim();
 
                     if (updatedContent.isEmpty()) {
-                        Toast.makeText(this, "Note cannot be empty.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                this,
+                                "Note cannot be empty.",
+                                Toast.LENGTH_SHORT
+                        ).show();
                         return;
                     }
 
@@ -284,13 +321,19 @@ public class SearchActivity extends AppCompatActivity {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
     private void updateNote(Note note) {
         new Thread(() -> {
             AppDatabase db = AppDatabase.getDatabase(this);
             db.noteDao().update(note);
 
             runOnUiThread(() -> {
-                Toast.makeText(this, "Note updated successfully.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                        this,
+                        "Note updated successfully.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
                 loadSearchResults();
             });
         }).start();
@@ -299,8 +342,10 @@ public class SearchActivity extends AppCompatActivity {
     private void showPrivateKeyPrompt(Note note) {
         TextInputEditText input = new TextInputEditText(this);
         input.setHint("Enter 4-digit key");
-        input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER |
-                android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        input.setInputType(
+                android.text.InputType.TYPE_CLASS_NUMBER |
+                        android.text.InputType.TYPE_NUMBER_VARIATION_PASSWORD
+        );
 
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Private Note")
@@ -314,7 +359,11 @@ public class SearchActivity extends AppCompatActivity {
                     if (enteredKey.equals(PRIVATE_KEY)) {
                         showNoteDialog(note);
                     } else {
-                        Toast.makeText(this, "Incorrect private key.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                this,
+                                "Incorrect private key.",
+                                Toast.LENGTH_SHORT
+                        ).show();
                     }
                 })
                 .setNegativeButton("Cancel", null)
