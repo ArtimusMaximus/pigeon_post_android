@@ -70,29 +70,48 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/noteInputLayout" />
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/categoryInputLayout"
-        android:layout_width="0dp"
+<!--    <com.google.android.material.textfield.TextInputLayout-->
+<!--        android:id="@+id/categoryInputLayout"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_marginTop="24dp"-->
+<!--        android:layout_marginLeft="6dp"-->
+<!--        android:layout_marginRight="6dp"-->
+
+<!--        android:hint="Category"-->
+<!--        app:boxBackgroundMode="outline"-->
+<!--        app:endIconMode="dropdown_menu"-->
+<!--        app:layout_constraintEnd_toEndOf="parent"-->
+<!--        app:layout_constraintStart_toStartOf="parent"-->
+<!--        app:layout_constraintTop_toBottomOf="@id/headerRow">-->
+
+<!--        <AutoCompleteTextView-->
+<!--            android:id="@+id/dropdownCategory"-->
+<!--            android:padding="6dp"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:inputType="none"-->
+<!--            android:saveEnabled="false"/>-->
+
+<!--    </com.google.android.material.textfield.TextInputLayout>-->
+
+    <TextView
+        android:id="@+id/txtCategoryLabel"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:layout_marginLeft="6dp"
-        android:layout_marginRight="6dp"
+        android:text="Category"
+        app:layout_constraintTop_toBottomOf="@id/headerRow"
+        app:layout_constraintStart_toStartOf="parent" />
 
-        android:hint="Category"
-        app:boxBackgroundMode="outline"
-        app:endIconMode="dropdown_menu"
-        app:layout_constraintEnd_toEndOf="parent"
+    <Spinner
+        android:id="@+id/spinnerCategory"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/txtCategoryLabel"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/headerRow">
-
-        <AutoCompleteTextView
-            android:id="@+id/dropdownCategory"
-            android:padding="6dp"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="none" />
-
-    </com.google.android.material.textfield.TextInputLayout>
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/noteInputLayout"
@@ -103,7 +122,7 @@
         app:boxBackgroundMode="outline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/categoryInputLayout">
+        app:layout_constraintTop_toBottomOf="@id/spinnerCategory">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editNote"

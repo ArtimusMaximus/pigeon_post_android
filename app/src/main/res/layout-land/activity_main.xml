@@ -51,22 +51,35 @@
                 android:src="@drawable/ic_settings_24" />
         </LinearLayout>
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/categoryInputLayout"
-            android:layout_width="match_parent"
+<!--        <com.google.android.material.textfield.TextInputLayout-->
+<!--            android:id="@+id/categoryInputLayout"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="12dp"-->
+<!--            android:hint="Category"-->
+<!--            app:boxBackgroundMode="outline"-->
+<!--            app:endIconMode="dropdown_menu">-->
+
+<!--            <AutoCompleteTextView-->
+<!--                android:id="@+id/dropdownCategory"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:inputType="none"-->
+<!--                android:saveEnabled="false"-->
+<!--                 />-->
+<!--        </com.google.android.material.textfield.TextInputLayout>-->
+        <TextView
+            android:id="@+id/txtCategoryLabel"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:hint="Category"
-            app:boxBackgroundMode="outline"
-            app:endIconMode="dropdown_menu">
+            android:text="Category" />
 
-            <AutoCompleteTextView
-                android:id="@+id/dropdownCategory"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="none"
-                 />
-        </com.google.android.material.textfield.TextInputLayout>
+        <Spinner
+            android:id="@+id/spinnerCategory"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/noteInputLayout"
