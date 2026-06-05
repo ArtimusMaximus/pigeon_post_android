@@ -81,6 +81,11 @@ public class MainActivity extends AppCompatActivity {
 
         loadRecentNotes();
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadRecentNotes();
+    }
 
     private void setupCategorySpinner() {
         categorySpinner = findViewById(R.id.spinnerCategory);
