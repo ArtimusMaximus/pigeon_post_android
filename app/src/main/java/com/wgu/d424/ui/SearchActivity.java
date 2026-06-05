@@ -247,6 +247,9 @@ public class SearchActivity extends AppCompatActivity {
                 .setNegativeButton("Edit", (dialog, which) -> {
                     showEditNoteDialog(note);
                 })
+                .setNeutralButton("Delete", (dialog, which) -> {
+                    confirmDeleteNote(note);
+                })
                 .show();
     }
 
@@ -331,6 +334,32 @@ public class SearchActivity extends AppCompatActivity {
                 Toast.makeText(
                         this,
                         "Note updated successfully.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                loadSearchResults();
+            });
+        }).start();
+    }
+    private void confirmDeleteNote(Note note) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Delete Note")
+                .setMessage("Are you sure you want to permanently delete this note?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    deleteNote(note);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    private void deleteNote(Note note) {
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getDatabase(this);
+            db.noteDao().delete(note);
+
+            runOnUiThread(() -> {
+                Toast.makeText(
+                        this,
+                        "Note deleted successfully.",
                         Toast.LENGTH_SHORT
                 ).show();
 
