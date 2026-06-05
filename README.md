@@ -21,6 +21,7 @@ The application includes note categorization, search and filtering capabilities,
 
 * View recently created notes
 * Edit existing notes
+* Delete existing notes
 * Search notes by keyword
 * Filter notes by category
 * Filter notes by date range
@@ -140,6 +141,19 @@ A security profile is required when creating the first private note.
 3. Select **Edit**.
 4. Modify the category, content, or privacy setting.
 5. Select **Save**.
+
+### Deleting Notes
+
+1. Open the Search screen.
+2. Locate the note to be removed.
+3. Select the note to open the note details dialog.
+4. Select **Delete**.
+5. Review the confirmation message.
+6. Select **Delete** again to confirm the action.
+7. The note will be permanently removed from the database.
+8. The search results and recent notes lists will automatically update.
+
+Private notes require successful PIN verification before deletion is permitted.
 
 ### Managing Recovery Email
 
