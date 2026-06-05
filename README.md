@@ -242,13 +242,13 @@ Potential future enhancements include:
 
 Git Repository:
 
-[Insert Repository URL Here]
+https://gitlab.com/wgu-gitlab-environment/student-repos/amodyma/d424-software-engineering-capstone/-/tree/working_branch?ref_type=heads
 
 ---
 
 ## Author
 
-John Matrix
+Arthur Modyman IV - SID# 012240736
 
 Software Engineering Capstone Project
 
