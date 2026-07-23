@@ -183,7 +183,7 @@ The report displays:
 ## Project Structure
 
 ```text
-com.wgu.d424
+com.pigeonpost.android
 │
 ├── adapters
 │   └── RecentNotesAdapter.java
