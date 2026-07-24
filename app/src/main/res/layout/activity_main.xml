@@ -50,12 +50,25 @@
         </LinearLayout>
 
         <ImageButton
+            android:id="@+id/btnLogout"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Log out"
+            android:padding="12dp"
+            android:src="@drawable/ic_logout"
+            app:layout_constraintEnd_toStartOf="@id/btnProfile"
+            app:layout_constraintTop_toTopOf="@id/btnProfile"
+            app:layout_constraintBottom_toBottomOf="@id/btnProfile" />
+
+        <ImageButton
             android:id="@+id/btnProfile"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="Profile"
             android:src="@drawable/ic_settings_24" />
+
 
     </LinearLayout>
 

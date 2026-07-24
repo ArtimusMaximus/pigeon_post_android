@@ -31,6 +31,7 @@ import com.pigeonpost.android.data.entities.Profile;
 import com.pigeonpost.android.utils.SecurityUtils;
 import com.pigeonpost.android.data.db.AppDatabase;
 
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.List;
 
@@ -45,8 +46,6 @@ public class SearchActivity extends AppCompatActivity {
 
     private long startDateMillis = 0;
     private long endDateMillis = 0;
-
-//    private static final String PRIVATE_KEY = "1234";
 
     private final String[] searchCategories = {
             "All",
@@ -114,7 +113,7 @@ public class SearchActivity extends AppCompatActivity {
         RecyclerView recyclerSearchResults = findViewById(R.id.recyclerSearchResults);
 
         searchAdapter = new RecentNotesAdapter(note -> {
-            if (note.getIsPrivate()) {
+            if (note.isPrivateNote()) {
                 showPrivateKeyPrompt(note);
             } else {
                 showNoteDialog(note);
@@ -178,8 +177,8 @@ public class SearchActivity extends AppCompatActivity {
 
         MaterialButton reportBtn = findViewById(R.id.btn_report);
         reportBtn.setOnClickListener(view -> {
-            Intent intent = new Intent(SearchActivity.this, ReportActivity.class);
-            startActivity(intent);
+//            Intent intent = new Intent(SearchActivity.this, ReportActivity.class);
+//            startActivity(intent); // temporary block out so we can deal with later
         });
     }
 
@@ -222,29 +221,6 @@ public class SearchActivity extends AppCompatActivity {
         dialog.show();
     }
 
-//    private void loadSearchResults() { // old, Room db/local version only
-//        String keyword = editSearchKeyword.getText() == null
-//                ? ""
-//                : editSearchKeyword.getText().toString().trim();
-//
-//        String category = spinnerSearchCategory.getSelectedItem() == null
-//                ? "All"
-//                : spinnerSearchCategory.getSelectedItem().toString();
-//
-//        new Thread(() -> {
-//            AppDatabase db = AppDatabase.getDatabase(this);
-//
-//            List<Note> results = db.noteDao().searchNotes(
-//                    keyword,
-//                    category,
-//                    startDateMillis,
-//                    endDateMillis
-//            );
-//
-//            runOnUiThread(() -> searchAdapter.setNotes(results));
-//        }).start();
-//    }
-    // new loadSearchResults:
     private void loadSearchResults() {
         String keyword = editSearchKeyword.getText() == null
                 ? ""
@@ -253,6 +229,8 @@ public class SearchActivity extends AppCompatActivity {
         String category = spinnerSearchCategory.getSelectedItem() == null
                 ? "All"
                 : spinnerSearchCategory.getSelectedItem().toString();
+
+
 
         noteRepository.searchNotes(
                 keyword,
@@ -281,7 +259,7 @@ public class SearchActivity extends AppCompatActivity {
 
     private void showNoteDialog(Note note) {
         new MaterialAlertDialogBuilder(this)
-                .setTitle(note.getCategory())
+                .setTitle(note.getCategoryName())
                 .setMessage(note.getContent())
                 .setPositiveButton("Close", null)
                 .setNegativeButton("Edit", (dialog, which) -> {
@@ -313,7 +291,7 @@ public class SearchActivity extends AppCompatActivity {
         categorySpinner.setAdapter(adapter);
 
         for (int i = 0; i < noteCategories.length; i++) {
-            if (noteCategories[i].equalsIgnoreCase(note.getCategory())) {
+            if (noteCategories[i].equalsIgnoreCase(note.getCategoryName())) {
                 categorySpinner.setSelection(i);
                 break;
             }
@@ -328,7 +306,7 @@ public class SearchActivity extends AppCompatActivity {
 
         CheckBox privateCheckBox = new CheckBox(this);
         privateCheckBox.setText("Private note");
-        privateCheckBox.setChecked(note.getIsPrivate());
+        privateCheckBox.setChecked(note.isPrivateNote());
 
         container.addView(categorySpinner);
         container.addView(noteInput);
@@ -354,10 +332,10 @@ public class SearchActivity extends AppCompatActivity {
                         return;
                     }
 
-                    note.setCategory(updatedCategory);
+                    note.setCategoryName(updatedCategory);
                     note.setContent(updatedContent);
-                    note.setIsPrivate(privateCheckBox.isChecked());
-                    note.setUpdatedAt(System.currentTimeMillis());
+                    note.setPrivateNote(privateCheckBox.isChecked());
+                    note.setUpdatedAt(Instant.now().toString());
 
                     updateNote(note);
                 })
@@ -365,23 +343,7 @@ public class SearchActivity extends AppCompatActivity {
                 .show();
     }
 
-//    private void updateNote(Note note) { // old, room db/local version
-//        new Thread(() -> {
-//            AppDatabase db = AppDatabase.getDatabase(this);
-//            db.noteDao().update(note);
-//
-//            runOnUiThread(() -> {
-//                Toast.makeText(
-//                        this,
-//                        "Note updated successfully.",
-//                        Toast.LENGTH_SHORT
-//                ).show();
-//
-//                loadSearchResults();
-//            });
-//        }).start();
-//    }
-    // new updateNote
+
 private void updateNote(Note note) {
     noteRepository.updateNote(
             note,
@@ -422,22 +384,7 @@ private void updateNote(Note note) {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
-//    private void deleteNote(Note note) { // old room db/local version
-//        new Thread(() -> {
-//            AppDatabase db = AppDatabase.getDatabase(this);
-//            db.noteDao().delete(note);
-//
-//            runOnUiThread(() -> {
-//                Toast.makeText(
-//                        this,
-//                        "Note deleted successfully.",
-//                        Toast.LENGTH_SHORT
-//                ).show();
-//
-//                loadSearchResults();
-//            });
-//        }).start();
-//    }
+
     private void deleteNote(Note note) {
         noteRepository.deleteNote(
                 note,

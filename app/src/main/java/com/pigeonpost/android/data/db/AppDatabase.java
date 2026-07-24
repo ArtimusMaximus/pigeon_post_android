@@ -11,7 +11,7 @@ import com.pigeonpost.android.data.dao.ProfileDao;
 import com.pigeonpost.android.data.entities.Note;
 import com.pigeonpost.android.data.entities.Profile;
 
-@Database(entities = {Note.class, Profile.class}, version = 6, exportSchema = false)
+@Database(entities = {Note.class, Profile.class}, version = 7, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase instance;
     public abstract NoteDao noteDao();

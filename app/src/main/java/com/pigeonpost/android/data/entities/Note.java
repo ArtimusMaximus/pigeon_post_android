@@ -1,69 +1,137 @@
 package com.pigeonpost.android.data.entities;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 @Entity(tableName = "notes")
 public class Note {
 
-    @PrimaryKey(autoGenerate = true)
-    private int id;
+    @PrimaryKey
+    private long id;
 
-    private String category;
+    @NonNull
+    private String title;
+
+    @NonNull
     private String content;
-    private long createdAt;
 
-    private long updatedAt;
-    private boolean isPrivate;
+    private boolean privateNote;
 
-    public Note(String category, String content, long createdAt, long updatedAt, boolean isPrivate) {
-        this.category = category;
+    @NonNull
+    private String createdAt;
+
+    @NonNull
+    private String updatedAt;
+
+    @Nullable
+    private Integer categoryId;
+
+    @Nullable
+    private String categoryName;
+
+    @Nullable
+    private String categoryColor;
+
+    public Note(
+            long id,
+            @NonNull String title,
+            @NonNull String content,
+            boolean privateNote,
+            @NonNull String createdAt,
+            @NonNull String updatedAt,
+            @Nullable Integer categoryId,
+            @Nullable String categoryName,
+            @Nullable String categoryColor
+    ) {
+        this.id = id;
+        this.title = title;
         this.content = content;
+        this.privateNote = privateNote;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.isPrivate = isPrivate;
+        this.categoryId = categoryId;
+        this.categoryName = categoryName;
+        this.categoryColor = categoryColor;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
-    public String getCategory() {
-        return category;
+    @NonNull
+    public String getTitle() {
+        return title;
     }
 
+    public void setTitle(@NonNull String title) {
+        this.title = title;
+    }
+
+    @NonNull
     public String getContent() {
         return content;
     }
 
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
-    }
-
-    public void setContent(String content) {
+    public void setContent(@NonNull String content) {
         this.content = content;
     }
 
-    public void setCreatedAt(long createdAt) {
+    public boolean isPrivateNote() {
+        return privateNote;
+    }
+
+    public void setPrivateNote(boolean privateNote) {
+        this.privateNote = privateNote;
+    }
+
+    @NonNull
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(@NonNull String createdAt) {
         this.createdAt = createdAt;
     }
 
-    public void setUpdatedAt(long updatedAt) {
+    @NonNull
+    public String getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(@NonNull String updatedAt) {
         this.updatedAt = updatedAt;
     }
 
-    public void setIsPrivate(boolean isPrivate) { this.isPrivate = isPrivate; }
-    public boolean getIsPrivate() { return this.isPrivate; }
+    @Nullable
+    public Integer getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(@Nullable Integer categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    @Nullable
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(@Nullable String categoryName) {
+        this.categoryName = categoryName;
+    }
+
+    @Nullable
+    public String getCategoryColor() {
+        return categoryColor;
+    }
+
+    public void setCategoryColor(@Nullable String categoryColor) {
+        this.categoryColor = categoryColor;
+    }
 }

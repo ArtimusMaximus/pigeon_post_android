@@ -1,5 +1,7 @@
 package com.pigeonpost.android.ui;
 
+import static androidx.core.content.ContextCompat.startActivity;
+
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -16,6 +18,8 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -33,12 +37,21 @@ import com.pigeonpost.android.adapters.RecentNotesAdapter;
 import com.pigeonpost.android.data.db.AppDatabase;
 import com.pigeonpost.android.data.entities.Note;
 import com.pigeonpost.android.data.entities.Profile;
+import com.pigeonpost.android.data.repository.NoteRepository;
+import com.pigeonpost.android.network.dto.NoteResponse;
 import com.pigeonpost.android.security.TokenManager;
 import com.pigeonpost.android.utils.SecurityUtils;
+import android.widget.ImageButton;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+//
+import android.util.Log;
+
+//
 
 
 
@@ -53,6 +66,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerRecentNotes;
     private Spinner categorySpinner;
     private TokenManager tokenManager;
+    private NoteRepository noteRepository;
+    private ImageButton logoutButton;
 
     private final String[] categories = {
             "Business",
@@ -77,6 +92,15 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        logoutButton = findViewById(R.id.btnLogout);
+        logoutButton.setOnClickListener(view ->
+                showLogoutConfirmation()
+        );
+
+        noteRepository = new NoteRepository(this);
+
+        testNoteSynchronization();
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -93,6 +117,8 @@ public class MainActivity extends AppCompatActivity {
 
         loadRecentNotes();
 
+//        testAuthenticatedNotesRequest();
+//        testTypedNotesRequest();
     }
     @Override
     protected void onResume() {
@@ -121,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerRecentNotes = findViewById(R.id.recyclerRecentNotes);
 
         recentNotesAdapter = new RecentNotesAdapter(note -> {
-            if (note.getIsPrivate()) {
+            if (note.isPrivateNote()) {
                 showPrivateKeyPrompt(note);
             } else {
                 showNoteDialog(note);
@@ -302,7 +328,7 @@ public class MainActivity extends AppCompatActivity {
     private void loadRecentNotes() {
         new Thread(() -> {
             AppDatabase db = AppDatabase.getDatabase(this);
-            List<Note> recentNotes = db.noteDao().getTopFiveRecentNotes();
+            List<Note> recentNotes = db.noteDao().getRecentNotes(5);
 
             runOnUiThread(() -> recentNotesAdapter.setNotes(recentNotes));
         }).start();
@@ -310,46 +336,30 @@ public class MainActivity extends AppCompatActivity {
 
     private void showNoteDialog(Note note) {
         new MaterialAlertDialogBuilder(this)
-                .setTitle(note.getCategory())
+                .setTitle(note.getCategoryName())
                 .setMessage(note.getContent())
                 .setPositiveButton("Close", null)
                 .show();
     }
 
+
     private void saveNote(
-            String category,
-            String noteText,
-            boolean isPrivate,
-            CheckBox privateChecked
+                    String category,
+                    String noteText,
+                    boolean isPrivate,
+                    CheckBox privateChecked
     ) {
-        new Thread(() -> {
-            AppDatabase db = AppDatabase.getDatabase(this);
-
-            Note note = new Note(
-                    category,
-                    noteText,
-                    System.currentTimeMillis(),
-                    System.currentTimeMillis(),
-                    isPrivate
-            );
-
-            db.noteDao().insert(note);
-
             runOnUiThread(() -> {
-                editNote.getText().clear();
-                privateChecked.setChecked(false);
-                categorySpinner.setSelection(0);
-
                 Toast.makeText(
-                        this,
-                        "Note successfully saved to the database!",
+                        MainActivity.this,
+                        "Server note creation is not connected yet.",
                         Toast.LENGTH_SHORT
                 ).show();
 
-                loadRecentNotes();
+                privateChecked.setChecked(false);
             });
-        }).start();
     }
+
 
     private void checkProfileAndSavePrivateNote(
             String category,
@@ -517,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void openLoginActivity() { // OPEN THIS IF NO JWT ACCESS TOKEN IS PRESENT
+    private void openLoginActivity() { // OPEN THIS MODAL IF NO JWT ACCESS TOKEN IS PRESENT
         Intent intent = new Intent(
                 MainActivity.this,
                 LoginActivity.class
@@ -532,5 +542,128 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
 
+    // temp
+    private void testNoteSynchronization() {
+        noteRepository.syncServerNotes(
+                0,
+                20,
+                new NoteRepository.SyncNotesCallback() {
+                    @Override
+                    public void onSuccess(int cachedNoteCount) {
+                        Log.d(
+                                "PIGEON_SYNC",
+                                "Cached " + cachedNoteCount + " notes."
+                        );
+
+                        runOnUiThread(() ->
+                                Toast.makeText(
+                                        MainActivity.this,
+                                        "Cached "
+                                                + cachedNoteCount
+                                                + " server notes.",
+                                        Toast.LENGTH_SHORT
+                                ).show()
+                        );
+
+                        verifyCachedNotes();
+                    }
+
+                    @Override
+                    public void onError(
+                            int statusCode,
+                            String message
+                    ) {
+                        Log.e(
+                                "PIGEON_SYNC",
+                                "Sync failed. Status="
+                                        + statusCode
+                                        + ", message="
+                                        + message
+                        );
+                    }
+                }
+        );
+    }
+    private void verifyCachedNotes() {
+        noteRepository.getLocalNotes(
+                new NoteRepository.LocalNotesCallback() {
+                    @Override
+                    public void onSuccess(List<Note> notes) {
+                        for (Note note : notes) {
+                            Log.d(
+                                    "PIGEON_CACHE",
+                                    "id=" + note.getId()
+                                            + ", title=" + note.getTitle()
+                                            + ", category="
+                                            + (
+                                            note.getCategoryName() == null
+                                                    ? "Uncategorized"
+                                                    : note.getCategoryName()
+                                    )
+                            );
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Log.e(
+                                "PIGEON_CACHE",
+                                message
+                        );
+                    }
+                }
+        );
+    }
+    // temp
+    private void showLogoutConfirmation() {
+        new AlertDialog.Builder(this)
+                .setTitle("Log out?")
+                .setMessage(
+                        "You will need to enter your email and password again."
+                )
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Log out", (dialog, which) ->
+                        performLocalLogout()
+                )
+                .show();
+    }
+    private void performLocalLogout() {
+        tokenManager.clearTokens();
+        noteRepository.clearLocalCache(
+                new NoteRepository.ClearCacheCallback() {
+                    @Override
+                    public void onComplete() {
+                        runOnUiThread(() ->
+                                openLoginAfterLogout()
+                        );
+                    }
+                    @Override
+                    public void onError(String message) {
+                        Log.e(
+                                "PIGEON_LOGOUT",
+                                "Cache clear failed: " + message
+                        );
+
+                        runOnUiThread(() ->
+                                openLoginAfterLogout()
+                        );
+                    }
+                }
+        );
+    }
+    private void openLoginAfterLogout() {
+        Intent intent = new Intent(
+                MainActivity.this,
+                LoginActivity.class
+        );
+
+        intent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TASK
+        );
+
+        startActivity(intent);
+        finish();
+    }
 
 }

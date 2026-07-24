@@ -76,7 +76,7 @@ public class LoginActivity extends AppCompatActivity {
                 password
         );
 
-        RetrofitClient.getApiService()
+        RetrofitClient.getApiService(LoginActivity.this)
                 .login(loginRequest)
                 .enqueue(new Callback<AuthResponse>() {
                     @Override
