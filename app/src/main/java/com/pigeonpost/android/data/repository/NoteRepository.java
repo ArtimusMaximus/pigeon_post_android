@@ -3,14 +3,11 @@ package com.pigeonpost.android.data.repository;
 import static androidx.core.content.ContextCompat.startActivity;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.pigeonpost.android.data.dao.NoteDao;
 import com.pigeonpost.android.data.db.AppDatabase;
 import com.pigeonpost.android.data.entities.Note;
-
-import android.content.Context;
-import android.content.Intent;
-import android.util.Log;
 
 import com.pigeonpost.android.network.RetrofitClient;
 import com.pigeonpost.android.network.dto.NoteResponse;
@@ -24,11 +21,12 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.pigeonpost.android.data.entities.Note;
 import com.pigeonpost.android.data.mapper.NoteMapper;
 import com.pigeonpost.android.security.TokenManager;
-import com.pigeonpost.android.ui.LoginActivity;
-import com.pigeonpost.android.ui.MainActivity;
+
+import com.pigeonpost.android.network.dto.CreateNoteRequest;
+import com.pigeonpost.android.network.dto.NoteResponse;
+import com.pigeonpost.android.data.mapper.NoteMapper;
 
 import java.util.ArrayList;
 
@@ -76,15 +74,53 @@ public class NoteRepository {
     ) {
         executorService.execute(() -> {
             try {
-                String startTimeStamp = Instant.ofEpochMilli(startDate).toString();
-                String endTimeStamp = Instant.ofEpochMilli(endDate).toString();
+                String safeKeyword =
+                        keyword == null ? "" : keyword.trim();
+
+                String safeCategory =
+                        category == null ? "All" : category;
+
+                String startTimestamp =
+                        startDate > 0
+                                ? Instant.ofEpochMilli(startDate).toString()
+                                : Instant.EPOCH.toString();
+
+                String endTimestamp =
+                        endDate > 0
+                                ? Instant.ofEpochMilli(endDate).toString()
+                                : Instant.parse(
+                                "9999-12-31T23:59:59.999Z"
+                        ).toString();
+                //temp
+                List<Note> allNotes = noteDao.getAllNotes();
+
+                for (Note note : allNotes) {
+                    Log.d(
+                            "PIGEON_ALL_ROOM_NOTES",
+                            "id=" + note.getId()
+                                    + ", createdAt=" + note.getCreatedAt()
+                                    + ", category=" + note.getCategoryName()
+                                    + ", content=" + note.getContent()
+                    );
+                }
+                //temp
+
 
                 List<Note> notes = noteDao.searchNotes(
-                        keyword,
-                        category,
-                        startTimeStamp,
-                        endTimeStamp
+                        safeKeyword,
+                        safeCategory,
+                        startTimestamp,
+                        endTimestamp
                 );
+
+                for (Note note : notes) {
+                    Log.d(
+                            "PIGEON_SEARCH_ORDER",
+                            "id=" + note.getId()
+                                    + ", createdAt=" + note.getCreatedAt()
+                                    + ", content=" + note.getContent()
+                    );
+                }
 
                 callback.onSuccess(notes);
             } catch (Exception exception) {
@@ -124,8 +160,9 @@ public class NoteRepository {
     public interface ServerNotesCallback {
 
         void onSuccess(
-                List<NoteResponse> notes,
-                long totalElements
+//                List<NoteResponse> notes,
+//                long totalElements
+                PagedResponse<NoteResponse> response
         );
 
         void onError(
@@ -181,9 +218,12 @@ public class NoteRepository {
                             return;
                         }
 
+//                        callback.onSuccess(
+//                                notes,
+//                                body.getTotalElements()
+//                        );
                         callback.onSuccess(
-                                notes,
-                                body.getTotalElements()
+                                body
                         );
                     }
 
@@ -232,51 +272,81 @@ public class NoteRepository {
             }
         });
     }
+
     public void syncServerNotes(
-            int page,
-            int size,
             SyncNotesCallback callback
     ) {
+        syncServerNotesPage(
+                0,
+                20,
+                new ArrayList<>(),
+                callback
+        );
+    }
+
+
+    private void syncServerNotesPage(
+            int page,
+            int size,
+            List<Note> cachedNotes,
+            SyncNotesCallback callback
+    ) {
+
         fetchServerNotes(
                 page,
                 size,
                 new ServerNotesCallback() {
+
                     @Override
                     public void onSuccess(
-                            List<NoteResponse> responses,
-                            long totalElements
+                            PagedResponse<NoteResponse> response
                     ) {
+
+                        for (NoteResponse noteResponse :
+                                response.getContent()) {
+
+                            cachedNotes.add(
+                                    NoteMapper.fromResponse(noteResponse)
+                            );
+                        }
+
+                        if (!response.isLast()) {
+
+                            syncServerNotesPage(
+                                    page + 1,
+                                    size,
+                                    cachedNotes,
+                                    callback
+                            );
+
+                            return;
+                        }
+
                         executorService.execute(() -> {
+
                             try {
-                                List<Note> cachedNotes =
-                                        new ArrayList<>();
 
-                                for (NoteResponse response : responses) {
-                                    cachedNotes.add(
-                                            NoteMapper.fromResponse(response)
-                                    );
-                                }
-
-                                /*
-                                 * Because this request loads the complete first
-                                 * page and currently contains every server note,
-                                 * replace the existing cache.
-                                 */
                                 noteDao.deleteAll();
+
                                 noteDao.upsertAll(cachedNotes);
 
                                 callback.onSuccess(
                                         cachedNotes.size()
                                 );
+
                             } catch (Exception exception) {
+
                                 callback.onError(
                                         -1,
                                         exception.getMessage() == null
                                                 ? "Unable to update local cache."
                                                 : exception.getMessage()
                                 );
+
                             }
+
                         });
+
                     }
 
                     @Override
@@ -284,13 +354,22 @@ public class NoteRepository {
                             int statusCode,
                             String message
                     ) {
+
                         callback.onError(
                                 statusCode,
                                 message
                         );
+
                     }
+
                 }
         );
+
+    }
+
+    public interface SyncCallback {
+        void onSuccess(int noteCount);
+        void onError(Exception exception);
     }
 
     public void clearLocalCache(
@@ -308,6 +387,85 @@ public class NoteRepository {
                 );
             }
         });
+    }
+
+    public void createNote(
+            Integer categoryId,
+            String title,
+            String content,
+            boolean privateNote,
+            CreateNoteCallback callback
+    ) {
+        CreateNoteRequest request = new CreateNoteRequest(
+                categoryId,
+                title,
+                content,
+                privateNote
+        );
+
+        RetrofitClient.getApiService(applicationContext)
+                .createNote(request)
+                .enqueue(new Callback<NoteResponse>() {
+                    @Override
+                    public void onResponse(
+                            Call<NoteResponse> call,
+                            Response<NoteResponse> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            callback.onError(
+                                    response.code(),
+                                    "Server returned HTTP " + response.code()
+                            );
+                            return;
+                        }
+
+                        NoteResponse body = response.body();
+
+                        if (body == null) {
+                            callback.onError(
+                                    response.code(),
+                                    "Server returned an empty response."
+                            );
+                            return;
+                        }
+
+                        Note cachedNote = NoteMapper.fromResponse(body);
+
+                        executorService.execute(() -> {
+                            try {
+                                noteDao.upsert(cachedNote);
+                                callback.onSuccess(cachedNote);
+                            } catch (Exception exception) {
+                                callback.onError(
+                                        -1,
+                                        exception.getMessage() == null
+                                                ? "Note was created but could not be cached."
+                                                : exception.getMessage()
+                                );
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<NoteResponse> call,
+                            Throwable throwable
+                    ) {
+                        callback.onError(
+                                -1,
+                                throwable.getMessage() == null
+                                        ? "Unable to reach the server."
+                                        : throwable.getMessage()
+                        );
+                    }
+                });
+    }
+
+    public interface CreateNoteCallback {
+
+        void onSuccess(Note note);
+
+        void onError(int statusCode, String message);
     }
 
     public void close() {

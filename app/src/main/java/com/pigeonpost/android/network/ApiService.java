@@ -5,6 +5,7 @@ import com.pigeonpost.android.network.dto.LoginRequest;
 
 import com.pigeonpost.android.network.dto.NoteResponse;
 import com.pigeonpost.android.network.dto.PagedResponse;
+import com.pigeonpost.android.network.dto.CreateNoteRequest;
 
 import retrofit2.http.GET;
 import retrofit2.http.Query;
@@ -18,6 +19,11 @@ public interface ApiService {
     @POST("api/auth/login")
     Call<AuthResponse> login(
             @Body LoginRequest request
+    );
+
+    @POST("api/notes")
+    Call<NoteResponse> createNote(
+            @Body CreateNoteRequest request
     );
 
     @GET("api/notes")

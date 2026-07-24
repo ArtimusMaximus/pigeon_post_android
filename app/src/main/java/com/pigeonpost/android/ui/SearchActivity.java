@@ -91,8 +91,10 @@ public class SearchActivity extends AppCompatActivity {
         setupDateButtons();
         setupNavigationButtons();
 
-        loadSearchResults();
+//        loadSearchResults(); // temp disable
     }
+
+
 
     private void setupCategorySpinner() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -230,8 +232,6 @@ public class SearchActivity extends AppCompatActivity {
                 ? "All"
                 : spinnerSearchCategory.getSelectedItem().toString();
 
-
-
         noteRepository.searchNotes(
                 keyword,
                 category,
@@ -255,6 +255,11 @@ public class SearchActivity extends AppCompatActivity {
                     }
                 }
         );
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadSearchResults();
     }
 
     private void showNoteDialog(Note note) {

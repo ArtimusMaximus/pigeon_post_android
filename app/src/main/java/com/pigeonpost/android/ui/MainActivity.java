@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
 
         noteRepository = new NoteRepository(this);
 
-        testNoteSynchronization();
+//        synchronizeNotes();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -115,7 +115,9 @@ public class MainActivity extends AppCompatActivity {
         setupSpeechRecognizer();
         setupSaveButton();
 
-        loadRecentNotes();
+        synchronizeNotes();
+
+//        loadRecentNotes(); // temp disable
 
 //        testAuthenticatedNotesRequest();
 //        testTypedNotesRequest();
@@ -284,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
                 checkProfileAndSavePrivateNote(category, noteText, privateChecked);
             } else {
                 saveNote(category, noteText, false, privateChecked);
+
             }
         });
     }
@@ -330,9 +333,13 @@ public class MainActivity extends AppCompatActivity {
             AppDatabase db = AppDatabase.getDatabase(this);
             List<Note> recentNotes = db.noteDao().getRecentNotes(5);
 
-            runOnUiThread(() -> recentNotesAdapter.setNotes(recentNotes));
+            runOnUiThread(() -> {
+                recentNotesAdapter.setNotes(recentNotes);
+                recyclerRecentNotes.scrollToPosition(0);
+            });
         }).start();
     }
+
 
     private void showNoteDialog(Note note) {
         new MaterialAlertDialogBuilder(this)
@@ -344,20 +351,67 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void saveNote(
-                    String category,
-                    String noteText,
-                    boolean isPrivate,
-                    CheckBox privateChecked
+            String category,
+            String noteText,
+            boolean isPrivate,
+            CheckBox privateChecked
     ) {
-            runOnUiThread(() -> {
-                Toast.makeText(
-                        MainActivity.this,
-                        "Server note creation is not connected yet.",
-                        Toast.LENGTH_SHORT
-                ).show();
+        String trimmedText = noteText.trim();
+        String title = createTitleFromContent(trimmedText);
 
-                privateChecked.setChecked(false);
-            });
+        noteRepository.createNote(
+                null,
+                title,
+                noteText,
+                isPrivate,
+                new NoteRepository.CreateNoteCallback() {
+                    @Override
+                    public void onSuccess(Note note) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "Note saved.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
+
+                            privateChecked.setChecked(false);
+                            editNote.setText("");
+                            loadRecentNotes();
+                        });
+                    }
+
+                    @Override
+                    public void onError(
+                            int statusCode,
+                            String message
+                    ) {
+                        Log.e(
+                                "PIGEON_CREATE",
+                                "Create failed. Status="
+                                        + statusCode
+                                        + ", message="
+                                        + message
+                        );
+
+                        runOnUiThread(() ->
+                                Toast.makeText(
+                                        MainActivity.this,
+                                        "Unable to save note.",
+                                        Toast.LENGTH_SHORT
+                                ).show()
+                        );
+                    }
+                }
+        );
+    }
+    private String createTitleFromContent(String content) {
+        String trimmedContent = content.trim();
+
+        if (trimmedContent.length() <= 40) {
+            return trimmedContent;
+        }
+
+        return trimmedContent.substring(0, 40).trim() + "...";
     }
 
 
@@ -542,30 +596,21 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
 
-    // temp
-    private void testNoteSynchronization() {
+
+    private void synchronizeNotes() {
         noteRepository.syncServerNotes(
-                0,
-                20,
                 new NoteRepository.SyncNotesCallback() {
                     @Override
-                    public void onSuccess(int cachedNoteCount) {
-                        Log.d(
-                                "PIGEON_SYNC",
-                                "Cached " + cachedNoteCount + " notes."
-                        );
+                    public void onSuccess(int noteCount) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(
+                                    MainActivity.this,
+                                    "Cached " + noteCount + " server notes.",
+                                    Toast.LENGTH_SHORT
+                            ).show();
 
-                        runOnUiThread(() ->
-                                Toast.makeText(
-                                        MainActivity.this,
-                                        "Cached "
-                                                + cachedNoteCount
-                                                + " server notes.",
-                                        Toast.LENGTH_SHORT
-                                ).show()
-                        );
-
-                        verifyCachedNotes();
+                            loadRecentNotes();
+                        });
                     }
 
                     @Override
@@ -573,48 +618,18 @@ public class MainActivity extends AppCompatActivity {
                             int statusCode,
                             String message
                     ) {
-                        Log.e(
-                                "PIGEON_SYNC",
-                                "Sync failed. Status="
-                                        + statusCode
-                                        + ", message="
-                                        + message
+                        runOnUiThread(() ->
+                                Toast.makeText(
+                                        MainActivity.this,
+                                        message,
+                                        Toast.LENGTH_SHORT
+                                ).show()
                         );
                     }
                 }
         );
     }
-    private void verifyCachedNotes() {
-        noteRepository.getLocalNotes(
-                new NoteRepository.LocalNotesCallback() {
-                    @Override
-                    public void onSuccess(List<Note> notes) {
-                        for (Note note : notes) {
-                            Log.d(
-                                    "PIGEON_CACHE",
-                                    "id=" + note.getId()
-                                            + ", title=" + note.getTitle()
-                                            + ", category="
-                                            + (
-                                            note.getCategoryName() == null
-                                                    ? "Uncategorized"
-                                                    : note.getCategoryName()
-                                    )
-                            );
-                        }
-                    }
 
-                    @Override
-                    public void onError(String message) {
-                        Log.e(
-                                "PIGEON_CACHE",
-                                message
-                        );
-                    }
-                }
-        );
-    }
-    // temp
     private void showLogoutConfirmation() {
         new AlertDialog.Builder(this)
                 .setTitle("Log out?")

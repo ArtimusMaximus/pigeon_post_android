@@ -28,12 +28,11 @@ public class RecentNotesAdapter extends RecyclerView.Adapter<RecentNotesAdapter.
     }
 
     public void setNotes(List<Note> newNotes) {
-        notes.clear();
-
-        if (newNotes != null) {
-            notes.addAll(newNotes);
-        }
-
+        this.notes.clear();
+        this.notes.addAll(newNotes);
+//        if (newNotes != null) {
+//            notes.addAll(newNotes);
+//        }
         notifyDataSetChanged();
     }
 

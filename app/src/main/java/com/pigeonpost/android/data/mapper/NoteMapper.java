@@ -4,6 +4,8 @@ import com.pigeonpost.android.data.entities.Note;
 import com.pigeonpost.android.network.dto.CategoryResponse;
 import com.pigeonpost.android.network.dto.NoteResponse;
 
+import java.time.OffsetDateTime;
+
 public final class NoteMapper {
 
     private NoteMapper() {
@@ -23,13 +25,23 @@ public final class NoteMapper {
             categoryColor = category.getColor();
         }
 
+        String createdAt = OffsetDateTime
+                .parse(response.getCreatedAt())
+                .toInstant()
+                .toString();
+
+        String updatedAt = OffsetDateTime
+                .parse(response.getUpdatedAt())
+                .toInstant()
+                .toString();
+
         return new Note(
                 response.getId(),
                 response.getTitle(),
                 response.getContent(),
                 response.isPrivateNote(),
-                response.getCreatedAt(),
-                response.getUpdatedAt(),
+                createdAt,
+                updatedAt,
                 categoryId,
                 categoryName,
                 categoryColor
