@@ -23,4 +23,7 @@ public interface CategoryDao {
 
     @Query("DELETE FROM categories")
     void deleteAll();
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void upsert(Category category);
 }

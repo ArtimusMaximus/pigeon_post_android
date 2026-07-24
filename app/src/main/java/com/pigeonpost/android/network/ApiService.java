@@ -9,6 +9,7 @@ import com.pigeonpost.android.network.dto.CreateNoteRequest;
 import com.pigeonpost.android.network.dto.UpdateNoteRequest;
 import com.pigeonpost.android.network.dto.CategoryResponse;
 import com.pigeonpost.android.network.dto.RefreshTokenRequest;
+import com.pigeonpost.android.network.dto.CreateCategoryRequest;
 import java.util.List;
 
 import retrofit2.http.DELETE;
@@ -52,5 +53,9 @@ public interface ApiService {
     @POST("api/auth/refresh")
     Call<AuthResponse> refreshToken(
             @Body RefreshTokenRequest request
+    );
+    @POST("api/categories")
+    Call<CategoryResponse> createCategory(
+            @Body CreateCategoryRequest request
     );
 }

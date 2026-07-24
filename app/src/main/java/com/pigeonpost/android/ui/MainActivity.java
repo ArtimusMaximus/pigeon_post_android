@@ -72,15 +72,6 @@ public class MainActivity extends AppCompatActivity {
     private ArrayAdapter<Category> categoryAdapter;
     private CategoryRepository categoryRepository;
 
-//    private final String[] categories = {
-//            "Business",
-//            "Personal",
-//            "Idea",
-//            "Reminder",
-//            "Health",
-//            "Other"
-//    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,6 +105,7 @@ public class MainActivity extends AppCompatActivity {
 
         categoryRepository = new CategoryRepository(this);
         setupCategorySpinner();
+        setupAddCategoryButton();
         setupRecentNotesRecyclerView();
         setupNavigationButtons();
         setupSpeechRecognizer();
@@ -153,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                         categoryAdapter.notifyDataSetChanged();
 
                         if (!categories.isEmpty()) {
-                            categorySpinner.setSelection(0);
+                            selectDefaultCategory();
                         }
                     }
                     @Override
@@ -161,6 +153,14 @@ public class MainActivity extends AppCompatActivity {
                         loadCachedCategories();
                     }
                 }
+        );
+    }
+    private void setupAddCategoryButton() {
+        MaterialButton addCategoryButton =
+                findViewById(R.id.btnAddCategory);
+
+        addCategoryButton.setOnClickListener(view ->
+                showCreateCategoryDialog()
         );
     }
     private void loadCachedCategories() {
@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
                         categoryAdapter.notifyDataSetChanged();
 
                         if (!categories.isEmpty()) {
-                            categorySpinner.setSelection(0);
+                            selectDefaultCategory();
                         }
                     }
                     @Override
@@ -734,5 +734,143 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
         finish();
     }
+    private void selectDefaultCategory() {
+        for (int i = 0; i < categories.size(); i++) {
+            Category category = categories.get(i);
 
+            if (category.getName() != null
+                    && category.getName().equalsIgnoreCase("Other")) {
+
+                categorySpinner.setSelection(i);
+                return;
+            }
+        }
+
+        if (!categories.isEmpty()) {
+            categorySpinner.setSelection(0);
+        }
+    }
+    private void showCreateCategoryDialog() {
+        LinearLayout container = new LinearLayout(this);
+
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(48, 16, 48, 0);
+
+        TextInputEditText nameInput =
+                new TextInputEditText(this);
+
+        nameInput.setHint("Category name");
+
+        TextInputEditText colorInput =
+                new TextInputEditText(this);
+
+        colorInput.setHint("Color, for example #808080");
+
+        container.addView(nameInput);
+        container.addView(colorInput);
+
+        AlertDialog dialog =
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle("Create Category")
+                        .setView(container)
+                        .setPositiveButton("Create", null)
+                        .setNegativeButton("Cancel", null)
+                        .create();
+
+        dialog.setOnShowListener(ignored ->
+                dialog.getButton(
+                        AlertDialog.BUTTON_POSITIVE
+                ).setOnClickListener(view -> {
+
+                    String name =
+                            nameInput.getText() == null
+                                    ? ""
+                                    : nameInput.getText()
+                                    .toString()
+                                    .trim();
+
+                    String color =
+                            colorInput.getText() == null
+                                    ? ""
+                                    : colorInput.getText()
+                                    .toString()
+                                    .trim();
+
+                    if (name.isEmpty()) {
+                        nameInput.setError(
+                                "Category name is required"
+                        );
+                        return;
+                    }
+
+                    if (color.isEmpty()) {
+                        color = "#808080";
+                    }
+
+                    createCategory(
+                            name,
+                            color,
+                            dialog
+                    );
+                })
+        );
+
+        dialog.show();
+    }
+    private void createCategory(
+            String name,
+            String color,
+            AlertDialog dialog
+    ) {
+        categoryRepository.createCategory(
+                name,
+                color,
+                new CategoryRepository.CategoryCallback() {
+                    @Override
+                    public void onSuccess(Category category) {
+                        categories.add(category);
+
+                        categoryAdapter.notifyDataSetChanged();
+
+                        int newCategoryPosition =
+                                findCategoryPosition(category.getId());
+
+                        if (newCategoryPosition >= 0) {
+                            categorySpinner.setSelection(
+                                    newCategoryPosition
+                            );
+                        }
+
+                        dialog.dismiss();
+
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Category created.",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(
+                                MainActivity.this,
+                                message,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
+        );
+    }
+    private int findCategoryPosition(Integer categoryId) {
+        for (int i = 0; i < categories.size(); i++) {
+            Category category = categories.get(i);
+
+            if (category.getId() != null
+                    && category.getId().equals(categoryId)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }

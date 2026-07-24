@@ -9,6 +9,7 @@ import com.pigeonpost.android.data.db.AppDatabase;
 import com.pigeonpost.android.data.entities.Category;
 import com.pigeonpost.android.network.RetrofitClient;
 import com.pigeonpost.android.network.dto.CategoryResponse;
+import com.pigeonpost.android.network.dto.CreateCategoryRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,10 +54,12 @@ public class CategoryRepository {
                             Response<List<CategoryResponse>> response
                     ) {
                         if (!response.isSuccessful()) {
-                            callback.onError(
-                                    "Unable to load categories. HTTP "
-                                            + response.code()
-                            );
+                            mainHandler.post(() -> {
+                                callback.onError(
+                                        "Unable to load categories. HTTP "
+                                                + response.code()
+                                );
+                            });
                             return;
                         }
 
@@ -64,9 +67,11 @@ public class CategoryRepository {
                                 response.body();
 
                         if (responseCategories == null) {
-                            callback.onError(
-                                    "The server returned no category data."
-                            );
+                            mainHandler.post(() -> {
+                                callback.onError(
+                                        "The server returned no category data."
+                                );
+                            });
                             return;
                         }
 
@@ -88,11 +93,13 @@ public class CategoryRepository {
                             Call<List<CategoryResponse>> call,
                             Throwable throwable
                     ) {
-                        callback.onError(
-                                throwable.getMessage() != null
-                                        ? throwable.getMessage()
-                                        : "Unable to connect to the server."
-                        );
+                        mainHandler.post(() -> {
+                            callback.onError(
+                                    throwable.getMessage() != null
+                                            ? throwable.getMessage()
+                                            : "Unable to connect to the server."
+                            );
+                        });
                     }
                 });
     }
@@ -111,6 +118,82 @@ public class CategoryRepository {
                     () -> callback.onSuccess(categories)
             );
         });
+    }
+    public void createCategory(
+            String name,
+            String color,
+            CategoryCallback callback
+    ) {
+        CreateCategoryRequest request =
+                new CreateCategoryRequest(
+                        name,
+                        color
+                );
+
+        RetrofitClient.getApiService(applicationContext)
+                .createCategory(request)
+                .enqueue(new Callback<CategoryResponse>() {
+                    @Override
+                    public void onResponse(
+                            Call<CategoryResponse> call,
+                            Response<CategoryResponse> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            String message;
+                            if (response.code() == 409) {
+                                message = "A category with that name already exists!";
+                            } else {
+                                message = "Unable to create category. HTTP " + response.code();
+                            }
+                            mainHandler.post(() ->
+                                    callback.onError(message)
+                            );
+                            return;
+                        }
+
+                        CategoryResponse responseCategory =
+                                response.body();
+
+                        if (responseCategory == null) {
+                            mainHandler.post(() ->
+                                    callback.onError(
+                                            "The server returned no category data."
+                                    )
+                            );
+                            return;
+                        }
+
+                        Category category =
+                                new Category(
+                                        responseCategory.getId(),
+                                        responseCategory.getName(),
+                                        responseCategory.getColor()
+                                );
+
+                        executorService.execute(() -> {
+                            categoryDao.upsert(category);
+
+                            mainHandler.post(() ->
+                                    callback.onSuccess(category)
+                            );
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<CategoryResponse> call,
+                            Throwable throwable
+                    ) {
+                        String message =
+                                throwable.getMessage() != null
+                                        ? throwable.getMessage()
+                                        : "Unable to connect to the server.";
+
+                        mainHandler.post(() ->
+                                callback.onError(message)
+                        );
+                    }
+                });
     }
 
     private List<Category> mapResponses(
@@ -137,6 +220,12 @@ public class CategoryRepository {
     public interface CategoriesCallback {
 
         void onSuccess(List<Category> categories);
+
+        void onError(String message);
+    }
+    public interface CategoryCallback {
+
+        void onSuccess(Category category);
 
         void onError(String message);
     }
