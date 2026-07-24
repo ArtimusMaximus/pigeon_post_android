@@ -2,6 +2,7 @@ package com.pigeonpost.android.network;
 
 import android.content.Context;
 
+import com.pigeonpost.android.security.SessionManager;
 import com.pigeonpost.android.security.TokenManager;
 
 import okhttp3.OkHttpClient;
@@ -15,6 +16,7 @@ public final class RetrofitClient {
             "http://10.0.2.2:8080/";
 
     private static volatile ApiService apiService;
+
 
     private RetrofitClient() {
         // Prevent construction.
@@ -37,35 +39,68 @@ public final class RetrofitClient {
     private static ApiService createApiService(Context context) {
         TokenManager tokenManager = new TokenManager(context);
 
+        SessionManager sessionManager = new SessionManager(context);
+
+        HttpLoggingInterceptor loggingInterceptor =
+                createLoggingInterceptor();
+
+        /*
+         * This separate service performs login and token refresh
+         * without attaching TokenAuthenticator.
+         */
+        OkHttpClient refreshHttpClient =
+                new OkHttpClient.Builder()
+                        .addInterceptor(loggingInterceptor)
+                        .build();
+
+        ApiService refreshApiService =
+                new Retrofit.Builder()
+                        .baseUrl(BASE_URL)
+                        .client(refreshHttpClient)
+                        .addConverterFactory(
+                                GsonConverterFactory.create()
+                        )
+                        .build()
+                        .create(ApiService.class);
+
         AuthInterceptor authInterceptor =
                 new AuthInterceptor(tokenManager);
 
-        HttpLoggingInterceptor loggingInterceptor =
-                new HttpLoggingInterceptor();
 
-        /*
-         * BASIC logs the request method, URL and response status
-         * without logging complete passwords, tokens or response bodies.
-         */
-        loggingInterceptor.setLevel(
-                HttpLoggingInterceptor.Level.BASIC
-        );
+        TokenAuthenticator tokenAuthenticator =
+                new TokenAuthenticator(
+                        tokenManager,
+                        refreshApiService,
+                        sessionManager
+                );
 
-        OkHttpClient okHttpClient =
+        OkHttpClient authenticatedHttpClient =
                 new OkHttpClient.Builder()
                         .addInterceptor(authInterceptor)
+                        .authenticator(tokenAuthenticator)
                         .addInterceptor(loggingInterceptor)
                         .build();
 
         Retrofit retrofit =
                 new Retrofit.Builder()
                         .baseUrl(BASE_URL)
-                        .client(okHttpClient)
+                        .client(authenticatedHttpClient)
                         .addConverterFactory(
                                 GsonConverterFactory.create()
                         )
                         .build();
 
         return retrofit.create(ApiService.class);
+    }
+
+    private static HttpLoggingInterceptor createLoggingInterceptor() {
+        HttpLoggingInterceptor loggingInterceptor =
+                new HttpLoggingInterceptor();
+
+        loggingInterceptor.setLevel(
+                HttpLoggingInterceptor.Level.BASIC
+        );
+
+        return loggingInterceptor;
     }
 }

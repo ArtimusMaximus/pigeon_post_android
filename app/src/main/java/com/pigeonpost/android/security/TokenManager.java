@@ -67,4 +67,10 @@ public class TokenManager {
                 .remove(TOKEN_TYPE_KEY)
                 .apply();
     }
+
+    public void clearRefreshTokenForTesting() { // testing for redirect to LoginActivity on expired refresh token
+        preferences.edit()
+                .remove(REFRESH_TOKEN_KEY)
+                .apply();
+    }
 }

@@ -15,6 +15,7 @@ import com.pigeonpost.android.network.RetrofitClient;
 import com.pigeonpost.android.network.dto.AuthResponse;
 import com.pigeonpost.android.network.dto.LoginRequest;
 import com.pigeonpost.android.security.TokenManager;
+import com.pigeonpost.android.security.SessionManager;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -125,6 +126,11 @@ public class LoginActivity extends AppCompatActivity {
                                 authResponse.getRefreshToken(),
                                 authResponse.getTokenType()
                         );
+                        //temp
+//                        tokenManager.clearRefreshTokenForTesting();
+                        //temp
+
+                        new SessionManager(LoginActivity.this).markSessionActive();
 
                         openMainActivity();
                     }

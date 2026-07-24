@@ -18,7 +18,6 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -40,10 +39,8 @@ import com.pigeonpost.android.data.entities.Note;
 import com.pigeonpost.android.data.entities.Profile;
 import com.pigeonpost.android.data.repository.CategoryRepository;
 import com.pigeonpost.android.data.repository.NoteRepository;
-import com.pigeonpost.android.network.dto.NoteResponse;
 import com.pigeonpost.android.security.TokenManager;
 import com.pigeonpost.android.utils.SecurityUtils;
-import android.widget.ImageButton;
 import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
@@ -124,10 +121,6 @@ public class MainActivity extends AppCompatActivity {
 
         synchronizeNotes();
 
-//        loadRecentNotes(); // temp disable
-
-//        testAuthenticatedNotesRequest();
-//        testTypedNotesRequest();
     }
     @Override
     protected void onResume() {
@@ -163,7 +156,6 @@ public class MainActivity extends AppCompatActivity {
                             categorySpinner.setSelection(0);
                         }
                     }
-
                     @Override
                     public void onError(String message) {
                         loadCachedCategories();
@@ -185,7 +177,6 @@ public class MainActivity extends AppCompatActivity {
                             categorySpinner.setSelection(0);
                         }
                     }
-
                     @Override
                     public void onError(String message) {
                         Toast.makeText(
@@ -330,7 +321,8 @@ public class MainActivity extends AppCompatActivity {
             CheckBox privateChecked = findViewById(R.id.checkPrivateNote);
             boolean isPrivateChecked = privateChecked.isChecked();
 
-            String category = categorySpinner.getSelectedItem().toString();
+            Category selectedCategory =
+                    (Category) categorySpinner.getSelectedItem();
             String noteText = editNote.getText() == null
                     ? ""
                     : editNote.getText().toString().trim();
@@ -345,9 +337,9 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (isPrivateChecked) {
-                checkProfileAndSavePrivateNote(category, noteText, privateChecked);
+                checkProfileAndSavePrivateNote(selectedCategory, noteText, privateChecked);
             } else {
-                saveNote(category, noteText, false, privateChecked);
+                saveNote(selectedCategory, noteText, false, privateChecked);
 
             }
         });
@@ -413,7 +405,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void saveNote(
-            String category,
+            @Nullable Category category,
             String noteText,
             boolean isPrivate,
             CheckBox privateChecked
@@ -422,7 +414,7 @@ public class MainActivity extends AppCompatActivity {
         String title = createTitleFromContent(trimmedText);
 
         noteRepository.createNote(
-                null,
+                category == null ? null : category.getId(),
                 title,
                 noteText,
                 isPrivate,
@@ -478,7 +470,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void checkProfileAndSavePrivateNote(
-            String category,
+            @Nullable Category category,
             String noteText,
             CheckBox privateChecked
     ) {
@@ -497,7 +489,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showCreateSecurityProfileDialog(
-            String category,
+            @Nullable Category category,
             String noteText,
             CheckBox privateChecked
     ) {

@@ -1,5 +1,7 @@
 package com.pigeonpost.android.network;
 
+import androidx.annotation.NonNull;
+
 import com.pigeonpost.android.security.TokenManager;
 
 import java.io.IOException;
@@ -16,6 +18,7 @@ public class AuthInterceptor implements Interceptor {
         this.tokenManager = tokenManager;
     }
 
+    @NonNull
     @Override
     public Response intercept(Chain chain) throws IOException {
         Request originalRequest = chain.request();

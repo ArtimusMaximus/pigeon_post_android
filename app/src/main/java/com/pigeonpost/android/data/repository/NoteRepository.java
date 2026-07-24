@@ -90,20 +90,6 @@ public class NoteRepository {
                                 : Instant.parse(
                                 "9999-12-31T23:59:59.999Z"
                         ).toString();
-                //temp
-                List<Note> allNotes = noteDao.getAllNotes();
-
-                for (Note note : allNotes) {
-                    Log.d(
-                            "PIGEON_ALL_ROOM_NOTES",
-                            "id=" + note.getId()
-                                    + ", createdAt=" + note.getCreatedAt()
-                                    + ", category=" + note.getCategoryName()
-                                    + ", content=" + note.getContent()
-                    );
-                }
-                //temp
-
 
                 List<Note> notes = noteDao.searchNotes(
                         safeKeyword,
@@ -111,16 +97,6 @@ public class NoteRepository {
                         startTimestamp,
                         endTimestamp
                 );
-
-                for (Note note : notes) {
-                    Log.d(
-                            "PIGEON_SEARCH_ORDER",
-                            "id=" + note.getId()
-                                    + ", createdAt=" + note.getCreatedAt()
-                                    + ", content=" + note.getContent()
-                    );
-                }
-
                 callback.onSuccess(notes);
             } catch (Exception exception) {
                 callback.onError(exception);

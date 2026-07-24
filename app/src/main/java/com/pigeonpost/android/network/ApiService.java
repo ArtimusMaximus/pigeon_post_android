@@ -7,8 +7,9 @@ import com.pigeonpost.android.network.dto.NoteResponse;
 import com.pigeonpost.android.network.dto.PagedResponse;
 import com.pigeonpost.android.network.dto.CreateNoteRequest;
 import com.pigeonpost.android.network.dto.UpdateNoteRequest;
-import java.util.List;
 import com.pigeonpost.android.network.dto.CategoryResponse;
+import com.pigeonpost.android.network.dto.RefreshTokenRequest;
+import java.util.List;
 
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
@@ -21,11 +22,6 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 public interface ApiService {
-
-    @POST("api/auth/login")
-    Call<AuthResponse> login(
-            @Body LoginRequest request
-    );
 
     @POST("api/notes")
     Call<NoteResponse> createNote(
@@ -47,7 +43,14 @@ public interface ApiService {
     Call<Void> deleteNote(
             @Path("id") Long id
     );
-
     @GET("api/categories")
     Call<List<CategoryResponse>> getCategories();
+    @POST("api/auth/login")
+    Call<AuthResponse> login(
+            @Body LoginRequest request
+    );
+    @POST("api/auth/refresh")
+    Call<AuthResponse> refreshToken(
+            @Body RefreshTokenRequest request
+    );
 }
