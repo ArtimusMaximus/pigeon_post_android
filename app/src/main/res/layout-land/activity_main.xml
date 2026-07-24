@@ -88,6 +88,17 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteCategory"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:minHeight="36dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="Delete" />
+
             <TextView
                 android:id="@+id/txtCategoryLabel"
                 android:layout_width="0dp"
@@ -109,6 +120,17 @@
                 app:icon="@android:drawable/ic_input_add"
                 app:iconGravity="textStart"
                 app:iconPadding="4dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEditCategory"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="0dp"
+                android:minHeight="36dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:text="Edit" />
 
         </LinearLayout>
 

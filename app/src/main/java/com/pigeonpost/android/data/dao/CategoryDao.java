@@ -26,4 +26,7 @@ public interface CategoryDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void upsert(Category category);
+
+    @Query("DELETE FROM categories WHERE id = :categoryId")
+    void deleteById(Integer categoryId);
 }

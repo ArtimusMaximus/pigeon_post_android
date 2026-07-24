@@ -59,6 +59,10 @@ public interface NoteDao {
                     "AND (" +
                     "    :category = '' " +
                     "    OR :category = 'All' " +
+                    "    OR (" +
+                    "        :category = 'Other' " +
+                    "        AND categoryId IS NULL" +
+                    "    ) " +
                     "    OR categoryName = :category" +
                     ") " +
                     "AND createdAt >= :startDate " +
@@ -71,5 +75,6 @@ public interface NoteDao {
             String startDate,
             String endDate
     );
+
 
 }

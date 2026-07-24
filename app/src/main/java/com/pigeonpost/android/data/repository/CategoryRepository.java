@@ -10,6 +10,7 @@ import com.pigeonpost.android.data.entities.Category;
 import com.pigeonpost.android.network.RetrofitClient;
 import com.pigeonpost.android.network.dto.CategoryResponse;
 import com.pigeonpost.android.network.dto.CreateCategoryRequest;
+import com.pigeonpost.android.network.dto.UpdateCategoryRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -213,6 +214,147 @@ public class CategoryRepository {
 
         return categories;
     }
+    public void updateCategory(
+            Integer categoryId,
+            String name,
+            String color,
+            CategoryCallback callback
+    ) {
+        UpdateCategoryRequest request =
+                new UpdateCategoryRequest(name, color);
+
+        RetrofitClient.getApiService(applicationContext)
+                .updateCategory(categoryId, request)
+                .enqueue(new Callback<CategoryResponse>() {
+                    @Override
+                    public void onResponse(
+                            Call<CategoryResponse> call,
+                            Response<CategoryResponse> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            String message;
+
+                            if (response.code() == 409) {
+                                message =
+                                        "A category with that name already exists.";
+                            } else if (response.code() == 404) {
+                                message = "Category not found.";
+                            } else {
+                                message =
+                                        "Unable to update category. HTTP "
+                                                + response.code();
+                            }
+
+                            mainHandler.post(() ->
+                                    callback.onError(message)
+                            );
+
+                            return;
+                        }
+
+                        CategoryResponse responseCategory =
+                                response.body();
+
+                        if (responseCategory == null) {
+                            mainHandler.post(() ->
+                                    callback.onError(
+                                            "The server returned no category data."
+                                    )
+                            );
+
+                            return;
+                        }
+
+                        Category category =
+                                new Category(
+                                        responseCategory.getId(),
+                                        responseCategory.getName(),
+                                        responseCategory.getColor()
+                                );
+
+                        executorService.execute(() -> {
+                            categoryDao.upsert(category);
+
+                            mainHandler.post(() ->
+                                    callback.onSuccess(category)
+                            );
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<CategoryResponse> call,
+                            Throwable throwable
+                    ) {
+                        String message =
+                                throwable.getMessage() != null
+                                        ? throwable.getMessage()
+                                        : "Unable to connect to the server.";
+
+                        mainHandler.post(() ->
+                                callback.onError(message)
+                        );
+                    }
+                });
+    }
+    public void deleteCategory(
+            Integer categoryId,
+            DeleteCategoryCallback callback
+    ) {
+        RetrofitClient.getApiService(applicationContext)
+                .deleteCategory(categoryId)
+                .enqueue(new Callback<Void>() {
+                    @Override
+                    public void onResponse(
+                            Call<Void> call,
+                            Response<Void> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            String message;
+
+                            if (response.code() == 400) {
+                                message =
+                                        "The default Other category cannot be deleted.";
+                            } else if (response.code() == 404) {
+                                message = "Category not found.";
+                            } else {
+                                message =
+                                        "Unable to delete category. HTTP "
+                                                + response.code();
+                            }
+
+                            mainHandler.post(() ->
+                                    callback.onError(message)
+                            );
+
+                            return;
+                        }
+
+                        executorService.execute(() -> {
+                            categoryDao.deleteById(categoryId);
+
+                            mainHandler.post(
+                                    callback::onSuccess
+                            );
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<Void> call,
+                            Throwable throwable
+                    ) {
+                        String message =
+                                throwable.getMessage() != null
+                                        ? throwable.getMessage()
+                                        : "Unable to connect to the server.";
+
+                        mainHandler.post(() ->
+                                callback.onError(message)
+                        );
+                    }
+                });
+    }
 
     /*
      * New callback interface for category-list operations.
@@ -226,6 +368,12 @@ public class CategoryRepository {
     public interface CategoryCallback {
 
         void onSuccess(Category category);
+
+        void onError(String message);
+    }
+    public interface DeleteCategoryCallback {
+
+        void onSuccess();
 
         void onError(String message);
     }

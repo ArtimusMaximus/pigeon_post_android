@@ -78,35 +78,11 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="Recent Notes"
+        android:textSize="18sp"
         android:textAppearance="?attr/textAppearanceHeadlineSmall"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/noteInputLayout" />
-
-<!--    <com.google.android.material.textfield.TextInputLayout-->
-<!--        android:id="@+id/categoryInputLayout"-->
-<!--        android:layout_width="0dp"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_marginTop="24dp"-->
-<!--        android:layout_marginLeft="6dp"-->
-<!--        android:layout_marginRight="6dp"-->
-
-<!--        android:hint="Category"-->
-<!--        app:boxBackgroundMode="outline"-->
-<!--        app:endIconMode="dropdown_menu"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/headerRow">-->
-
-<!--        <AutoCompleteTextView-->
-<!--            android:id="@+id/dropdownCategory"-->
-<!--            android:padding="6dp"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:inputType="none"-->
-<!--            android:saveEnabled="false"/>-->
-
-<!--    </com.google.android.material.textfield.TextInputLayout>-->
 
     <TextView
         android:id="@+id/txtCategoryLabel"
@@ -133,6 +109,32 @@
         app:iconPadding="4dp"
         app:layout_constraintBaseline_toBaselineOf="@id/txtCategoryLabel"
         app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEditCategory"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:minHeight="40dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:text="Edit"
+        app:layout_constraintBaseline_toBaselineOf="@id/txtCategoryLabel"
+        app:layout_constraintEnd_toStartOf="@id/btnAddCategory" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDeleteCategory"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:minHeight="40dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:text="Delete"
+        app:layout_constraintBaseline_toBaselineOf="@id/txtCategoryLabel"
+        app:layout_constraintEnd_toStartOf="@id/btnEditCategory" />
 
     <Spinner
         android:id="@+id/spinnerCategory"

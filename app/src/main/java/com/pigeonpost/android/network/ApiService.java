@@ -10,6 +10,7 @@ import com.pigeonpost.android.network.dto.UpdateNoteRequest;
 import com.pigeonpost.android.network.dto.CategoryResponse;
 import com.pigeonpost.android.network.dto.RefreshTokenRequest;
 import com.pigeonpost.android.network.dto.CreateCategoryRequest;
+import com.pigeonpost.android.network.dto.UpdateCategoryRequest;
 import java.util.List;
 
 import retrofit2.http.DELETE;
@@ -57,5 +58,15 @@ public interface ApiService {
     @POST("api/categories")
     Call<CategoryResponse> createCategory(
             @Body CreateCategoryRequest request
+    );
+    @PUT("api/categories/{id}")
+    Call<CategoryResponse> updateCategory(
+            @Path("id") Integer categoryId,
+            @Body UpdateCategoryRequest request
+    );
+
+    @DELETE("api/categories/{id}")
+    Call<Void> deleteCategory(
+            @Path("id") Integer categoryId
     );
 }

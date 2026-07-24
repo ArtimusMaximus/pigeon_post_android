@@ -54,25 +54,6 @@ public class SearchActivity extends AppCompatActivity {
     private long startDateMillis = 0;
     private long endDateMillis = 0;
 
-//    private final String[] searchCategories = {
-//            "All",
-//            "Business",
-//            "Personal",
-//            "Idea",
-//            "Reminder",
-//            "Health",
-//            "Other"
-//    };
-
-//    private final String[] noteCategories = {
-//            "Business",
-//            "Personal",
-//            "Idea",
-//            "Reminder",
-//            "Health",
-//            "Other"
-//    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,12 +82,49 @@ public class SearchActivity extends AppCompatActivity {
 
 //        loadSearchResults(); // temp disable
     }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadSearchResults();
+        refreshCategories();
+    }
 
 
 
+    //    private void setupCategorySpinner() {
+//        searchCategories.clear();
+//        searchCategories.add("All");
+//
+//        searchCategoryAdapter = new ArrayAdapter<>(
+//                this,
+//                android.R.layout.simple_spinner_item,
+//                searchCategories
+//        );
+//
+//        searchCategoryAdapter.setDropDownViewResource(
+//                android.R.layout.simple_spinner_dropdown_item
+//        );
+//
+//        spinnerSearchCategory.setAdapter(searchCategoryAdapter);
+//
+//        categoryRepository.synchronizeCategories(
+//                new CategoryRepository.CategoriesCallback() {
+//                    @Override
+//                    public void onSuccess(List<Category> serverCategories) {
+//                        applyCategories(serverCategories);
+//                    }
+//
+//                    @Override
+//                    public void onError(String message) {
+//                        loadCachedCategories();
+//                    }
+//                }
+//        );
+//    }
     private void setupCategorySpinner() {
         searchCategories.clear();
         searchCategories.add("All");
+        searchCategories.add("Other");
 
         searchCategoryAdapter = new ArrayAdapter<>(
                 this,
@@ -119,27 +137,23 @@ public class SearchActivity extends AppCompatActivity {
         );
 
         spinnerSearchCategory.setAdapter(searchCategoryAdapter);
-
-        categoryRepository.synchronizeCategories(
-                new CategoryRepository.CategoriesCallback() {
-                    @Override
-                    public void onSuccess(List<Category> serverCategories) {
-                        applyCategories(serverCategories);
-                    }
-
-                    @Override
-                    public void onError(String message) {
-                        loadCachedCategories();
-                    }
-                }
-        );
     }
     private void applyCategories(List<Category> loadedCategories) {
+        String selectedCategory = null;
+
+        Object selectedItem =
+                spinnerSearchCategory.getSelectedItem();
+
+        if (selectedItem != null) {
+            selectedCategory = selectedItem.toString();
+        }
+
         noteCategories.clear();
         noteCategories.addAll(loadedCategories);
 
         searchCategories.clear();
         searchCategories.add("All");
+        searchCategories.add("Other");
 
         for (Category category : loadedCategories) {
             if (category.getName() != null) {
@@ -148,7 +162,28 @@ public class SearchActivity extends AppCompatActivity {
         }
 
         searchCategoryAdapter.notifyDataSetChanged();
-        spinnerSearchCategory.setSelection(0);
+
+        int selectedPosition =
+                findSearchCategoryPosition(selectedCategory);
+
+        spinnerSearchCategory.setSelection(selectedPosition);
+    }
+    private int findSearchCategoryPosition(
+            String categoryName
+    ) {
+        if (categoryName == null) {
+            return 0;
+        }
+
+        for (int i = 0; i < searchCategories.size(); i++) {
+            if (categoryName.equalsIgnoreCase(
+                    searchCategories.get(i)
+            )) {
+                return i;
+            }
+        }
+
+        return 0;
     }
     private void loadCachedCategories() {
         categoryRepository.getLocalCategories(
@@ -238,8 +273,6 @@ public class SearchActivity extends AppCompatActivity {
 
         MaterialButton reportBtn = findViewById(R.id.btn_report);
         reportBtn.setOnClickListener(view -> {
-//            Intent intent = new Intent(SearchActivity.this, ReportActivity.class);
-//            startActivity(intent); // temporary block out so we can deal with later
         });
     }
 
@@ -299,6 +332,13 @@ public class SearchActivity extends AppCompatActivity {
                 new NoteRepository.NotesCallback() {
                     @Override
                     public void onSuccess(List<Note> notes) {
+                        for (Note note : notes) {
+                            if (note.getCategoryName() == null
+                                    || note.getCategoryName().trim().isEmpty()) {
+                                note.setCategoryName("Other");
+                            }
+                        }
+
                         runOnUiThread(() -> searchAdapter.setNotes(notes));
                     }
 
@@ -315,15 +355,32 @@ public class SearchActivity extends AppCompatActivity {
                 }
         );
     }
-    @Override
-    protected void onResume() {
-        super.onResume();
-        loadSearchResults();
+
+    private void refreshCategories() {
+        categoryRepository.synchronizeCategories(
+                new CategoryRepository.CategoriesCallback() {
+                    @Override
+                    public void onSuccess(List<Category> serverCategories) {
+                        applyCategories(serverCategories);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        loadCachedCategories();
+                    }
+                }
+        );
     }
 
     private void showNoteDialog(Note note) {
+        String categoryName = note.getCategoryName();
+
+        if (categoryName == null || categoryName.trim().isEmpty()) {
+            categoryName = "Other";
+        }
+
         new MaterialAlertDialogBuilder(this)
-                .setTitle(note.getCategoryName())
+                .setTitle(categoryName)
                 .setMessage(note.getContent())
                 .setPositiveButton("Close", null)
                 .setNegativeButton("Edit", (dialog, which) -> {
@@ -424,36 +481,36 @@ public class SearchActivity extends AppCompatActivity {
     }
 
 
-private void updateNote(Note note) {
-    noteRepository.updateNote(
-            note,
-            new NoteRepository.OperationCallback() {
-                @Override
-                public void onSuccess() {
-                    runOnUiThread(() -> {
-                        Toast.makeText(
-                                SearchActivity.this,
-                                "Note updated successfully.",
-                                Toast.LENGTH_SHORT
-                        ).show();
-
-                        loadSearchResults();
-                    });
-                }
-
-                @Override
-                public void onError(Exception exception) {
-                    runOnUiThread(() ->
+    private void updateNote(Note note) {
+        noteRepository.updateNote(
+                note,
+                new NoteRepository.OperationCallback() {
+                    @Override
+                    public void onSuccess() {
+                        runOnUiThread(() -> {
                             Toast.makeText(
                                     SearchActivity.this,
-                                    "Unable to update note.",
+                                    "Note updated successfully.",
                                     Toast.LENGTH_SHORT
-                            ).show()
-                    );
+                            ).show();
+
+                            loadSearchResults();
+                        });
+                    }
+
+                    @Override
+                    public void onError(Exception exception) {
+                        runOnUiThread(() ->
+                                Toast.makeText(
+                                        SearchActivity.this,
+                                        "Unable to update note.",
+                                        Toast.LENGTH_SHORT
+                                ).show()
+                        );
+                    }
                 }
-            }
-    );
-}
+        );
+    }
     private void confirmDeleteNote(Note note) {
         new MaterialAlertDialogBuilder(this)
                 .setTitle("Delete Note")

@@ -1,7 +1,5 @@
 package com.pigeonpost.android.ui;
 
-import static androidx.core.content.ContextCompat.startActivity;
-
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -47,12 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-//
 import android.util.Log;
-
-//
-
-
 
 public class MainActivity extends AppCompatActivity {
 
@@ -93,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
 
         noteRepository = new NoteRepository(this);
 
-//        synchronizeNotes();
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -106,10 +98,13 @@ public class MainActivity extends AppCompatActivity {
         categoryRepository = new CategoryRepository(this);
         setupCategorySpinner();
         setupAddCategoryButton();
+        setupEditCategoryButton();
+        setupDeleteCategoryButton();
         setupRecentNotesRecyclerView();
         setupNavigationButtons();
         setupSpeechRecognizer();
         setupSaveButton();
+
 
         synchronizeNotes();
 
@@ -118,6 +113,117 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadRecentNotes();
+    }
+
+    private void setupDeleteCategoryButton() {
+        MaterialButton deleteCategoryButton =
+                findViewById(R.id.btnDeleteCategory);
+
+        deleteCategoryButton.setOnClickListener(view -> {
+            Category selectedCategory =
+                    getSelectedCategory();
+
+            if (selectedCategory == null) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Select a category first.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return;
+            }
+
+            // "Other" is a synthetic UI category with no database ID.
+            if (selectedCategory.getId() == null) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Other cannot be deleted.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return;
+            }
+
+            showDeleteCategoryDialog(selectedCategory);
+        });
+    }
+    private void showDeleteCategoryDialog(
+            Category category
+    ) {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Delete Category")
+                .setMessage(
+                        "Delete \""
+                                + category.getName()
+                                + "\"? Notes in this category will be moved to Other."
+                )
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton(
+                        "Delete",
+                        (dialog, which) ->
+                                deleteCategory(category)
+                )
+                .show();
+    }
+    private void deleteCategory(
+            Category category
+    ) {
+        categoryRepository.deleteCategory(
+                category.getId(),
+                new CategoryRepository.DeleteCategoryCallback() {
+                    @Override
+                    public void onSuccess() {
+                        categoryRepository.synchronizeCategories(
+                                new CategoryRepository.CategoriesCallback() {
+                                    @Override
+                                    public void onSuccess(
+                                            List<Category> serverCategories
+                                    ) {
+                                        categories.clear();
+                                        Category otherCategory = new Category(
+                                                null,
+                                                "Other",
+                                                "#808080"
+                                        );
+                                        categories.add(otherCategory);
+                                        categories.addAll(serverCategories);
+
+                                        categoryAdapter.notifyDataSetChanged();
+                                        selectDefaultCategory();
+
+                                        synchronizeNotes();
+
+                                        Toast.makeText(
+                                                MainActivity.this,
+                                                "Category deleted. Related notes are now uncategorized as 'Other'",
+                                                Toast.LENGTH_SHORT
+                                        ).show();
+                                    }
+
+                                    @Override
+                                    public void onError(String message) {
+                                        loadCachedCategories();
+
+                                        Toast.makeText(
+                                                MainActivity.this,
+                                                "Category deleted, but categories could not be refreshed.",
+                                                Toast.LENGTH_SHORT
+                                        ).show();
+                                    }
+                                }
+                        );
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(
+                                MainActivity.this,
+                                message,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
+        );
     }
 
     private void setupCategorySpinner() {
@@ -140,6 +246,13 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(List<Category> serverCategories) {
                         categories.clear();
+                        categories.add(
+                                new Category(
+                                        null,
+                                        "Other",
+                                        "#808080"
+                                )
+                        );
                         categories.addAll(serverCategories);
 
                         categoryAdapter.notifyDataSetChanged();
@@ -163,12 +276,181 @@ public class MainActivity extends AppCompatActivity {
                 showCreateCategoryDialog()
         );
     }
+    private void setupEditCategoryButton() {
+        MaterialButton editCategoryButton =
+                findViewById(R.id.btnEditCategory);
+
+        editCategoryButton.setOnClickListener(view -> {
+            Category selectedCategory =
+                    getSelectedCategory();
+
+            if (selectedCategory == null) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Select a category first.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return;
+            }
+
+            if (selectedCategory.getId() == null) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Other cannot be edited.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return;
+            }
+
+            showEditCategoryDialog(selectedCategory);
+        });
+    }
+    private void showEditCategoryDialog(
+            Category category
+    ) {
+        LinearLayout container =
+                new LinearLayout(this);
+
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(48, 16, 48, 0);
+
+        TextInputEditText nameInput =
+                new TextInputEditText(this);
+
+        nameInput.setHint("Category name");
+        nameInput.setText(category.getName());
+
+        TextInputEditText colorInput =
+                new TextInputEditText(this);
+
+        colorInput.setHint("Color, for example #808080");
+        colorInput.setText(category.getColor());
+
+        container.addView(nameInput);
+        container.addView(colorInput);
+
+        AlertDialog dialog =
+                new MaterialAlertDialogBuilder(this)
+                        .setTitle("Edit Category")
+                        .setView(container)
+                        .setPositiveButton("Save", null)
+                        .setNegativeButton("Cancel", null)
+                        .create();
+
+        dialog.setOnShowListener(ignored ->
+                dialog.getButton(
+                        AlertDialog.BUTTON_POSITIVE
+                ).setOnClickListener(view -> {
+                    String name =
+                            nameInput.getText() == null
+                                    ? ""
+                                    : nameInput.getText()
+                                    .toString()
+                                    .trim();
+
+                    String color =
+                            colorInput.getText() == null
+                                    ? ""
+                                    : colorInput.getText()
+                                    .toString()
+                                    .trim();
+
+                    if (name.isEmpty()) {
+                        nameInput.setError(
+                                "Category name is required"
+                        );
+                        return;
+                    }
+
+                    if (color.isEmpty()) {
+                        color = "#808080";
+                    }
+
+                    updateCategory(
+                            category.getId(),
+                            name,
+                            color,
+                            dialog
+                    );
+                })
+        );
+
+        dialog.show();
+    }
+    private void updateCategory(
+            Integer categoryId,
+            String name,
+            String color,
+            AlertDialog dialog
+    ) {
+        categoryRepository.updateCategory(
+                categoryId,
+                name,
+                color,
+                new CategoryRepository.CategoryCallback() {
+                    @Override
+                    public void onSuccess(
+                            Category updatedCategory
+                    ) {
+                        int position =
+                                findCategoryPosition(
+                                        updatedCategory.getId()
+                                );
+
+                        if (position >= 0) {
+                            categories.set(
+                                    position,
+                                    updatedCategory
+                            );
+
+                            categoryAdapter.notifyDataSetChanged();
+                            categorySpinner.setSelection(position);
+                        }
+
+                        dialog.dismiss();
+
+                        Toast.makeText(
+                                MainActivity.this,
+                                "Category updated.",
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(
+                                MainActivity.this,
+                                message,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
+        );
+    }
+    private Category getSelectedCategory() {
+        int position =
+                categorySpinner.getSelectedItemPosition();
+
+        if (position < 0 || position >= categories.size()) {
+            return null;
+        }
+
+        return categories.get(position);
+    }
     private void loadCachedCategories() {
         categoryRepository.getLocalCategories(
                 new CategoryRepository.CategoriesCallback() {
                     @Override
                     public void onSuccess(List<Category> cachedCategories) {
                         categories.clear();
+                        Category otherCategory = new Category(
+                                null,
+                                "Other",
+                                "#808080"
+                        );
+                        categories.add(otherCategory);
                         categories.addAll(cachedCategories);
 
                         categoryAdapter.notifyDataSetChanged();
@@ -315,32 +597,59 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupSaveButton() {
-        MaterialButton saveNoteBtn = findViewById(R.id.btnSaveNote);
+        MaterialButton saveNoteBtn =
+                findViewById(R.id.btnSaveNote);
 
         saveNoteBtn.setOnClickListener(view -> {
-            CheckBox privateChecked = findViewById(R.id.checkPrivateNote);
-            boolean isPrivateChecked = privateChecked.isChecked();
+            CheckBox privateChecked =
+                    findViewById(R.id.checkPrivateNote);
+
+            boolean isPrivateChecked =
+                    privateChecked.isChecked();
 
             Category selectedCategory =
                     (Category) categorySpinner.getSelectedItem();
-            String noteText = editNote.getText() == null
-                    ? ""
-                    : editNote.getText().toString().trim();
+
+            if (selectedCategory == null) {
+                Toast.makeText(
+                        MainActivity.this,
+                        "Select a category.",
+                        Toast.LENGTH_SHORT
+                ).show();
+
+                return;
+            }
+
+            String noteText =
+                    editNote.getText() == null
+                            ? ""
+                            : editNote.getText()
+                            .toString()
+                            .trim();
 
             if (noteText.isEmpty()) {
                 Toast.makeText(
-                        this,
-                        "Enter a note, no empty notes are allowed!",
+                        MainActivity.this,
+                        "Enter a note. Empty notes are not allowed.",
                         Toast.LENGTH_SHORT
                 ).show();
+
                 return;
             }
 
             if (isPrivateChecked) {
-                checkProfileAndSavePrivateNote(selectedCategory, noteText, privateChecked);
+                checkProfileAndSavePrivateNote(
+                        selectedCategory,
+                        noteText,
+                        privateChecked
+                );
             } else {
-                saveNote(selectedCategory, noteText, false, privateChecked);
-
+                saveNote(
+                        selectedCategory,
+                        noteText,
+                        false,
+                        privateChecked
+                );
             }
         });
     }
@@ -430,7 +739,7 @@ public class MainActivity extends AppCompatActivity {
 
                             privateChecked.setChecked(false);
                             editNote.setText("");
-                            loadRecentNotes();
+                            synchronizeNotes();
                         });
                     }
 
@@ -735,17 +1044,6 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
     private void selectDefaultCategory() {
-        for (int i = 0; i < categories.size(); i++) {
-            Category category = categories.get(i);
-
-            if (category.getName() != null
-                    && category.getName().equalsIgnoreCase("Other")) {
-
-                categorySpinner.setSelection(i);
-                return;
-            }
-        }
-
         if (!categories.isEmpty()) {
             categorySpinner.setSelection(0);
         }

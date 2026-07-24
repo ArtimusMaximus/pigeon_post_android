@@ -50,7 +50,12 @@ public class RecentNotesAdapter extends RecyclerView.Adapter<RecentNotesAdapter.
     public void onBindViewHolder(@NonNull NoteViewHolder holder, int position) {
         Note note = notes.get(position);
 
-        holder.txtNoteCategory.setText(note.getCategoryName());
+        String categoryName = note.getCategoryName();
+
+        if (categoryName == null || categoryName.trim().isEmpty()) {
+            categoryName = "Other";
+        }
+        holder.txtNoteCategory.setText(categoryName);
 
         String preview = note.isPrivateNote()
                 ? "Private note - tap to unlock"

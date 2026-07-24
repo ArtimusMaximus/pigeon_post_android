@@ -13,7 +13,7 @@ import com.pigeonpost.android.data.entities.Profile;
 import com.pigeonpost.android.data.dao.CategoryDao;
 import com.pigeonpost.android.data.entities.Category;
 
-@Database(entities = {Note.class, Profile.class, Category.class}, version = 8, exportSchema = false)
+@Database(entities = {Note.class, Profile.class, Category.class}, version = 9, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase instance;
     public abstract NoteDao noteDao();
