@@ -35,8 +35,10 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.pigeonpost.android.R;
 import com.pigeonpost.android.adapters.RecentNotesAdapter;
 import com.pigeonpost.android.data.db.AppDatabase;
+import com.pigeonpost.android.data.entities.Category;
 import com.pigeonpost.android.data.entities.Note;
 import com.pigeonpost.android.data.entities.Profile;
+import com.pigeonpost.android.data.repository.CategoryRepository;
 import com.pigeonpost.android.data.repository.NoteRepository;
 import com.pigeonpost.android.network.dto.NoteResponse;
 import com.pigeonpost.android.security.TokenManager;
@@ -69,14 +71,18 @@ public class MainActivity extends AppCompatActivity {
     private NoteRepository noteRepository;
     private ImageButton logoutButton;
 
-    private final String[] categories = {
-            "Business",
-            "Personal",
-            "Idea",
-            "Reminder",
-            "Health",
-            "Other"
-    };
+    private final List<Category> categories = new ArrayList<>();
+    private ArrayAdapter<Category> categoryAdapter;
+    private CategoryRepository categoryRepository;
+
+//    private final String[] categories = {
+//            "Business",
+//            "Personal",
+//            "Idea",
+//            "Reminder",
+//            "Health",
+//            "Other"
+//    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
 
         editNote = findViewById(R.id.editNote);
 
+        categoryRepository = new CategoryRepository(this);
         setupCategorySpinner();
         setupRecentNotesRecyclerView();
         setupNavigationButtons();
@@ -131,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupCategorySpinner() {
         categorySpinner = findViewById(R.id.spinnerCategory);
 
-        ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(
+        categoryAdapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_item,
                 categories
@@ -142,7 +149,53 @@ public class MainActivity extends AppCompatActivity {
         );
 
         categorySpinner.setAdapter(categoryAdapter);
-        categorySpinner.setSelection(0);
+
+        categoryRepository.synchronizeCategories(
+                new CategoryRepository.CategoriesCallback() {
+                    @Override
+                    public void onSuccess(List<Category> serverCategories) {
+                        categories.clear();
+                        categories.addAll(serverCategories);
+
+                        categoryAdapter.notifyDataSetChanged();
+
+                        if (!categories.isEmpty()) {
+                            categorySpinner.setSelection(0);
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        loadCachedCategories();
+                    }
+                }
+        );
+    }
+    private void loadCachedCategories() {
+        categoryRepository.getLocalCategories(
+                new CategoryRepository.CategoriesCallback() {
+                    @Override
+                    public void onSuccess(List<Category> cachedCategories) {
+                        categories.clear();
+                        categories.addAll(cachedCategories);
+
+                        categoryAdapter.notifyDataSetChanged();
+
+                        if (!categories.isEmpty()) {
+                            categorySpinner.setSelection(0);
+                        }
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(
+                                MainActivity.this,
+                                message,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
+        );
     }
 
     private void setupRecentNotesRecyclerView() {
@@ -229,12 +282,21 @@ public class MainActivity extends AppCompatActivity {
                     String spokenText = matches.get(0).trim();
                     boolean categoryFound = false;
 
-                    for (int i = 0; i < categories.length; i++) {
-                        String category = categories[i];
+                    for (int i = 0; i < categories.size(); i++) {
+                        Category category = categories.get(i);
+                        String categoryName = category.getName();
 
-                        if (spokenText.toLowerCase().startsWith(category.toLowerCase())) {
+                        if (
+                                categoryName != null
+                                        && spokenText.toLowerCase()
+                                        .startsWith(categoryName.toLowerCase())
+                        ) {
                             categorySpinner.setSelection(i);
-                            editNote.setText(spokenText.substring(category.length()).trim());
+
+                            editNote.setText(
+                                    spokenText.substring(categoryName.length()).trim()
+                            );
+
                             categoryFound = true;
                             break;
                         }

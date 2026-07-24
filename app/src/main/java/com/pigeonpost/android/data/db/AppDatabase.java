@@ -10,12 +10,15 @@ import com.pigeonpost.android.data.dao.NoteDao;
 import com.pigeonpost.android.data.dao.ProfileDao;
 import com.pigeonpost.android.data.entities.Note;
 import com.pigeonpost.android.data.entities.Profile;
+import com.pigeonpost.android.data.dao.CategoryDao;
+import com.pigeonpost.android.data.entities.Category;
 
-@Database(entities = {Note.class, Profile.class}, version = 7, exportSchema = false)
+@Database(entities = {Note.class, Profile.class, Category.class}, version = 8, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
     private static volatile AppDatabase instance;
     public abstract NoteDao noteDao();
     public abstract ProfileDao profileDao();
+    public abstract CategoryDao categoryDao();
 
     public static AppDatabase getDatabase(final Context context) {
         if (instance == null) {

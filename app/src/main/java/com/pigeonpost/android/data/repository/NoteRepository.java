@@ -22,11 +22,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.pigeonpost.android.data.mapper.NoteMapper;
+import com.pigeonpost.android.network.dto.UpdateNoteRequest;
 import com.pigeonpost.android.security.TokenManager;
 
 import com.pigeonpost.android.network.dto.CreateNoteRequest;
-import com.pigeonpost.android.network.dto.NoteResponse;
-import com.pigeonpost.android.data.mapper.NoteMapper;
 
 import java.util.ArrayList;
 
@@ -133,28 +132,114 @@ public class NoteRepository {
             Note note,
             OperationCallback callback
     ) {
-        executorService.execute(() -> {
-            try {
-                noteDao.update(note);
-                callback.onSuccess();
-            } catch (Exception exception) {
-                callback.onError(exception);
-            }
-        });
+        UpdateNoteRequest updateRequest =
+                new UpdateNoteRequest(
+                        note.getTitle(),
+                        note.getContent(),
+                        note.isPrivateNote(),
+                        note.getCategoryId()
+                );
+
+        RetrofitClient.getApiService(applicationContext)
+                .updateNote(
+                        note.getId(),
+                        updateRequest
+                )
+                .enqueue(new Callback<NoteResponse>() {
+                    @Override
+                    public void onResponse(
+                            Call<NoteResponse> call,
+                            Response<NoteResponse> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            callback.onError(
+                                    new Exception(
+                                            "Server returned HTTP "
+                                                    + response.code()
+                                    )
+                            );
+                            return;
+                        }
+
+                        NoteResponse responseBody = response.body();
+
+                        if (responseBody == null) {
+                            callback.onError(
+                                    new Exception(
+                                            "Server returned an empty response."
+                                    )
+                            );
+                            return;
+                        }
+
+                        executorService.execute(() -> {
+                            try {
+                                Note updatedNote =
+                                        NoteMapper.fromResponse(responseBody);
+
+                                noteDao.update(updatedNote);
+
+                                callback.onSuccess();
+                            } catch (Exception exception) {
+                                callback.onError(exception);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<NoteResponse> call,
+                            Throwable throwable
+                    ) {
+                        callback.onError(
+                                new Exception(throwable)
+                        );
+                    }
+                });
     }
 
     public void deleteNote(
             Note note,
             OperationCallback callback
     ) {
-        executorService.execute(() -> {
-            try {
-                noteDao.delete(note);
-                callback.onSuccess();
-            } catch (Exception exception) {
-                callback.onError(exception);
-            }
-        });
+        RetrofitClient.getApiService(applicationContext)
+                .deleteNote(note.getId())
+                .enqueue(new Callback<Void>() {
+                    @Override
+                    public void onResponse(
+                            Call<Void> call,
+                            Response<Void> response
+                    ) {
+                        if (!response.isSuccessful()) {
+                            callback.onError(
+                                    new Exception(
+                                            "Server returned HTTP "
+                                                    + response.code()
+                                    )
+                            );
+                            return;
+                        }
+
+                        executorService.execute(() -> {
+                            try {
+                                noteDao.delete(note);
+                                callback.onSuccess();
+                            } catch (Exception exception) {
+                                callback.onError(exception);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(
+                            Call<Void> call,
+                            Throwable throwable
+                    ) {
+                        callback.onError(
+                                new Exception(throwable)
+                        );
+                    }
+                });
     }
 
     public interface ServerNotesCallback {

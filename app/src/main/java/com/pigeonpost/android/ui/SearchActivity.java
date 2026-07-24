@@ -25,13 +25,16 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import com.pigeonpost.android.R;
 import com.pigeonpost.android.adapters.RecentNotesAdapter;
+import com.pigeonpost.android.data.entities.Category;
 import com.pigeonpost.android.data.entities.Note;
+import com.pigeonpost.android.data.repository.CategoryRepository;
 import com.pigeonpost.android.data.repository.NoteRepository;
 import com.pigeonpost.android.data.entities.Profile;
 import com.pigeonpost.android.utils.SecurityUtils;
 import com.pigeonpost.android.data.db.AppDatabase;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
@@ -43,28 +46,32 @@ public class SearchActivity extends AppCompatActivity {
     private MaterialButton btnEndDate;
     private RecentNotesAdapter searchAdapter;
     private NoteRepository noteRepository;
+    private final List<Category> noteCategories = new ArrayList<>();
+    private CategoryRepository categoryRepository;
+    private final List<String> searchCategories = new ArrayList<>();
+    private ArrayAdapter<String> searchCategoryAdapter;
 
     private long startDateMillis = 0;
     private long endDateMillis = 0;
 
-    private final String[] searchCategories = {
-            "All",
-            "Business",
-            "Personal",
-            "Idea",
-            "Reminder",
-            "Health",
-            "Other"
-    };
+//    private final String[] searchCategories = {
+//            "All",
+//            "Business",
+//            "Personal",
+//            "Idea",
+//            "Reminder",
+//            "Health",
+//            "Other"
+//    };
 
-    private final String[] noteCategories = {
-            "Business",
-            "Personal",
-            "Idea",
-            "Reminder",
-            "Health",
-            "Other"
-    };
+//    private final String[] noteCategories = {
+//            "Business",
+//            "Personal",
+//            "Idea",
+//            "Reminder",
+//            "Health",
+//            "Other"
+//    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +92,7 @@ public class SearchActivity extends AppCompatActivity {
         btnStartDate = findViewById(R.id.btnStartDate);
         btnEndDate = findViewById(R.id.btnEndDate);
 
+        categoryRepository = new CategoryRepository(this);
         setupCategorySpinner();
         setupRecyclerView();
         setupSearchListeners();
@@ -97,18 +105,69 @@ public class SearchActivity extends AppCompatActivity {
 
 
     private void setupCategorySpinner() {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        searchCategories.clear();
+        searchCategories.add("All");
+
+        searchCategoryAdapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_item,
                 searchCategories
         );
 
-        adapter.setDropDownViewResource(
+        searchCategoryAdapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item
         );
 
-        spinnerSearchCategory.setAdapter(adapter);
+        spinnerSearchCategory.setAdapter(searchCategoryAdapter);
+
+        categoryRepository.synchronizeCategories(
+                new CategoryRepository.CategoriesCallback() {
+                    @Override
+                    public void onSuccess(List<Category> serverCategories) {
+                        applyCategories(serverCategories);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        loadCachedCategories();
+                    }
+                }
+        );
+    }
+    private void applyCategories(List<Category> loadedCategories) {
+        noteCategories.clear();
+        noteCategories.addAll(loadedCategories);
+
+        searchCategories.clear();
+        searchCategories.add("All");
+
+        for (Category category : loadedCategories) {
+            if (category.getName() != null) {
+                searchCategories.add(category.getName());
+            }
+        }
+
+        searchCategoryAdapter.notifyDataSetChanged();
         spinnerSearchCategory.setSelection(0);
+    }
+    private void loadCachedCategories() {
+        categoryRepository.getLocalCategories(
+                new CategoryRepository.CategoriesCallback() {
+                    @Override
+                    public void onSuccess(List<Category> cachedCategories) {
+                        applyCategories(cachedCategories);
+                    }
+
+                    @Override
+                    public void onError(String message) {
+                        Toast.makeText(
+                                SearchActivity.this,
+                                message,
+                                Toast.LENGTH_SHORT
+                        ).show();
+                    }
+                }
+        );
     }
 
     private void setupRecyclerView() {
@@ -283,7 +342,7 @@ public class SearchActivity extends AppCompatActivity {
 
         Spinner categorySpinner = new Spinner(this);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        ArrayAdapter<Category> adapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_item,
                 noteCategories
@@ -295,11 +354,20 @@ public class SearchActivity extends AppCompatActivity {
 
         categorySpinner.setAdapter(adapter);
 
-        for (int i = 0; i < noteCategories.length; i++) {
-            if (noteCategories[i].equalsIgnoreCase(note.getCategoryName())) {
-                categorySpinner.setSelection(i);
+        int selectedPosition = -1;
+
+        for (int i = 0; i < noteCategories.size(); i++) {
+            Category category = noteCategories.get(i);
+
+            if (note.getCategoryId() != null
+                    && note.getCategoryId().equals(category.getId())) {
+                selectedPosition = i;
                 break;
             }
+        }
+
+        if (selectedPosition >= 0) {
+            categorySpinner.setSelection(selectedPosition);
         }
 
         TextInputEditText noteInput = new TextInputEditText(this);
@@ -321,12 +389,15 @@ public class SearchActivity extends AppCompatActivity {
                 .setTitle("Edit Note")
                 .setView(container)
                 .setPositiveButton("Save", (dialog, which) -> {
-                    String updatedCategory =
-                            categorySpinner.getSelectedItem().toString();
+                    Category selectedCategory =
+                            (Category) categorySpinner.getSelectedItem();
 
-                    String updatedContent = noteInput.getText() == null
-                            ? ""
-                            : noteInput.getText().toString().trim();
+                    String updatedContent =
+                            noteInput.getText() == null
+                                    ? ""
+                                    : noteInput.getText()
+                                    .toString()
+                                    .trim();
 
                     if (updatedContent.isEmpty()) {
                         Toast.makeText(
@@ -337,7 +408,11 @@ public class SearchActivity extends AppCompatActivity {
                         return;
                     }
 
-                    note.setCategoryName(updatedCategory);
+                    if (selectedCategory != null) {
+                        note.setCategoryId(selectedCategory.getId());
+                        note.setCategoryName(selectedCategory.getName());
+                    }
+
                     note.setContent(updatedContent);
                     note.setPrivateNote(privateCheckBox.isChecked());
                     note.setUpdatedAt(Instant.now().toString());
