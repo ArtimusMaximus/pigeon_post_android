@@ -134,7 +134,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:text="Run Report" />
+            android:text="Query Notes via AI" />
 
     </LinearLayout>
 

@@ -273,6 +273,8 @@ public class SearchActivity extends AppCompatActivity {
 
         MaterialButton reportBtn = findViewById(R.id.btn_report);
         reportBtn.setOnClickListener(view -> {
+            Intent intent = new Intent(SearchActivity.this, AiActivity.class);
+            startActivity(intent);
         });
     }
 

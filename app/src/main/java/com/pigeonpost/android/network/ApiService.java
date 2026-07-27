@@ -1,5 +1,7 @@
 package com.pigeonpost.android.network;
 
+import com.pigeonpost.android.data.remote.dto.AiAnswerResponse;
+import com.pigeonpost.android.data.remote.dto.AiQuestionRequest;
 import com.pigeonpost.android.network.dto.AuthResponse;
 import com.pigeonpost.android.network.dto.LoginRequest;
 
@@ -29,13 +31,11 @@ public interface ApiService {
     Call<NoteResponse> createNote(
             @Body CreateNoteRequest request
     );
-
     @GET("api/notes")
     Call<PagedResponse<NoteResponse>> getNotes(
             @Query("page") int page,
             @Query("size") int size
     );
-
     @PUT("api/notes/{id}")
     Call<NoteResponse> updateNote(
             @Path("id") Long id,
@@ -64,9 +64,12 @@ public interface ApiService {
             @Path("id") Integer categoryId,
             @Body UpdateCategoryRequest request
     );
-
     @DELETE("api/categories/{id}")
     Call<Void> deleteCategory(
             @Path("id") Integer categoryId
+    );
+    @POST("api/ai/ask")
+    Call<AiAnswerResponse> askAi(
+            @Body AiQuestionRequest request
     );
 }

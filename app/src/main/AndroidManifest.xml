@@ -28,8 +28,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".ui.SearchActivity" />
-        <activity android:name=".ui.ReportActivity" />
         <activity android:name=".ui.ProfileActivity" />
+        <activity android:name=".ui.AiActivity" android:exported="false" />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification_pigeon" />

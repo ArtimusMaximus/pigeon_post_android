@@ -47,10 +47,6 @@ public class NoteRepository {
         void onSuccess();
         void onError(Exception exception);
     }
-    //
-    TokenManager tokenManager;
-    NoteRepository noteRepository;
-    //
 
     private final NoteDao noteDao;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
