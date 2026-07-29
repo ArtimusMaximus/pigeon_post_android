@@ -9,5 +9,7 @@
 
     <!--    MISC-->
     <string name="misc_recording">Recording&#8230;</string>
+    <string name="read_aloud">Read Aloud</string>
+    <string name="read_aloud_auto">Read answers aloud automatically</string>
 
 </resources>

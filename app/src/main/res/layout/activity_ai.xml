@@ -121,14 +121,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:checked="true"
-                android:text="Read answers aloud automatically" />
+                android:text="@string/read_aloud_auto" />
 
             <Button
                 android:id="@+id/speakAnswerButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Speak Again"
+                android:text="@string/read_aloud"
                 android:visibility="gone" />
 
             <TextView
