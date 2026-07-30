@@ -12,9 +12,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class RetrofitClient {
 
-    private static final String BASE_URL =
-            "http://10.0.2.2:8080/";
-
+//    private static final String BASE_URL =  "http://10.0.2.2:8080/"; // DEV
+    private static final String BASE_URL = "https://pigeonpost.es9.app/"; // PROD
     private static volatile ApiService apiService;
 
 

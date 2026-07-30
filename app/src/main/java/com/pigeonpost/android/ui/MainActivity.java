@@ -51,6 +51,28 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 100;
 
+    private static final String[] CATEGORY_COLOR_NAMES = {
+            "Red",
+            "Orange",
+            "Yellow",
+            "Green",
+            "Teal",
+            "Blue",
+            "Purple",
+            "Pink"
+    };
+
+    private static final String[] CATEGORY_COLOR_VALUES = {
+            "#EF5350",
+            "#FB8C00",
+            "#FBC02D",
+            "#43A047",
+            "#00897B",
+            "#1E88E5",
+            "#8E24AA",
+            "#D81B60"
+    };
+
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
     private TextInputEditText editNote;
@@ -322,14 +344,35 @@ public class MainActivity extends AppCompatActivity {
         nameInput.setHint("Category name");
         nameInput.setText(category.getName());
 
-        TextInputEditText colorInput =
-                new TextInputEditText(this);
 
-        colorInput.setHint("Color, for example #808080");
-        colorInput.setText(category.getColor());
+//        TextInputEditText colorInput =
+//                new TextInputEditText(this);
+//        colorInput.setHint("Color, for example #808080");
+//        colorInput.setText(category.getColor());
+//        container.addView(nameInput);
+//        container.addView(colorInput);
+        Spinner colorSpinner =
+                new Spinner(this);
+
+        ArrayAdapter<String> colorAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        CATEGORY_COLOR_NAMES
+                );
+
+        colorAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+
+        colorSpinner.setAdapter(colorAdapter);
+
+        colorSpinner.setSelection(
+                findColorPosition(category.getColor())
+        );
 
         container.addView(nameInput);
-        container.addView(colorInput);
+        container.addView(colorSpinner);
 
         AlertDialog dialog =
                 new MaterialAlertDialogBuilder(this)
@@ -350,12 +393,22 @@ public class MainActivity extends AppCompatActivity {
                                     .toString()
                                     .trim();
 
+//                    String color =
+//                            colorInput.getText() == null
+//                                    ? ""
+//                                    : colorInput.getText()
+//                                    .toString()
+//                                    .trim();
+//                    if (color.isEmpty()) {
+//                        color = "#808080";
+//                    }
+                    int selectedColorPosition =
+                            colorSpinner.getSelectedItemPosition();
+
                     String color =
-                            colorInput.getText() == null
-                                    ? ""
-                                    : colorInput.getText()
-                                    .toString()
-                                    .trim();
+                            CATEGORY_COLOR_VALUES[
+                                    selectedColorPosition
+                                    ];
 
                     if (name.isEmpty()) {
                         nameInput.setError(
@@ -364,9 +417,7 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
 
-                    if (color.isEmpty()) {
-                        color = "#808080";
-                    }
+
 
                     updateCategory(
                             category.getId(),
@@ -1059,13 +1110,27 @@ public class MainActivity extends AppCompatActivity {
 
         nameInput.setHint("Category name");
 
-        TextInputEditText colorInput =
-                new TextInputEditText(this);
+//        TextInputEditText colorInput =
+//                new TextInputEditText(this);
+//        colorInput.setHint("Color, for example #808080");
+//        container.addView(nameInput);
+//        container.addView(colorInput);
+        Spinner colorSpinner =
+                new Spinner(this);
 
-        colorInput.setHint("Color, for example #808080");
+        ArrayAdapter<String> colorAdapter =
+                new ArrayAdapter<>(
+                        this,
+                        android.R.layout.simple_spinner_item,
+                        CATEGORY_COLOR_NAMES
+                );
 
+        colorAdapter.setDropDownViewResource(
+                android.R.layout.simple_spinner_dropdown_item
+        );
+        colorSpinner.setAdapter(colorAdapter);
         container.addView(nameInput);
-        container.addView(colorInput);
+        container.addView(colorSpinner);
 
         AlertDialog dialog =
                 new MaterialAlertDialogBuilder(this)
@@ -1087,12 +1152,22 @@ public class MainActivity extends AppCompatActivity {
                                     .toString()
                                     .trim();
 
+//                    String color =
+//                            colorInput.getText() == null
+//                                    ? ""
+//                                    : colorInput.getText()
+//                                    .toString()
+//                                    .trim();
+//                    if (color.isEmpty()) {
+//                        color = "#808080";
+//                    }
+                    int selectedColorPosition =
+                            colorSpinner.getSelectedItemPosition();
+
                     String color =
-                            colorInput.getText() == null
-                                    ? ""
-                                    : colorInput.getText()
-                                    .toString()
-                                    .trim();
+                            CATEGORY_COLOR_VALUES[
+                                    selectedColorPosition
+                                    ];
 
                     if (name.isEmpty()) {
                         nameInput.setError(
@@ -1101,9 +1176,7 @@ public class MainActivity extends AppCompatActivity {
                         return;
                     }
 
-                    if (color.isEmpty()) {
-                        color = "#808080";
-                    }
+
 
                     createCategory(
                             name,
@@ -1170,5 +1243,21 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return -1;
+    }
+    private int findColorPosition(String colorValue) {
+        if (colorValue == null) {
+            return 0;
+        }
+
+        for (int i = 0; i < CATEGORY_COLOR_VALUES.length; i++) {
+            if (
+                    CATEGORY_COLOR_VALUES[i]
+                            .equalsIgnoreCase(colorValue)
+            ) {
+                return i;
+            }
+        }
+
+        return 0;
     }
 }
