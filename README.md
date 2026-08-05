@@ -1,275 +1,267 @@
-# Pigeon Post
+# PigeonPost Android Client
 
-## Overview
+> **A production-ready Android client for an AI-powered personal knowledge assistant.**
 
-Pigeon Post is an Android note-taking application developed in Java that allows users to quickly create, organize, search, and manage notes. Notes can be created through manual text entry or Android speech-to-text functionality. All note data is stored locally using the Room persistence library, allowing users to access their information without requiring an internet connection.
+PigeonPost is a native Android application built in Java that allows users to capture, organize, and intelligently retrieve personal knowledge through text and voice notes. The application communicates with a self-hosted Spring Boot backend secured with JWT authentication and leverages Retrieval-Augmented Generation (RAG) to answer natural language questions using the user's own notes.
 
-The application includes note categorization, search and filtering capabilities, private note protection through PIN authentication, recovery email management, and reporting functionality. Pigeon Post was developed as part of a Software Engineering Capstone project and demonstrates Android development concepts including Room databases, RecyclerViews, Material Design components, SpeechRecognizer integration, data validation, and local data persistence.
+This repository contains the **Android frontend**. The backend API, vector database, and AI services are maintained in a separate private repository.
 
 ---
 
 ## Features
 
+### AI Knowledge Assistant
+
+* Ask natural language questions about your notes
+* AI-generated responses powered by Retrieval-Augmented Generation (RAG)
+* Semantic search using vector embeddings
+* Displays supporting source notes with relevance indicators
+* View embedding similarity information for AI-generated answers
+
 ### Note Creation
 
-* Create notes through manual text entry
-* Create notes using speech-to-text
-* Assign notes to predefined categories
-* Store notes locally using Room Database
+* Create notes manually
+* Create notes using Android Speech-to-Text
+* Assign notes to color-coded categories
+* Mark notes as private
+* Automatic synchronization with the backend API
 
 ### Note Management
 
-* View recently created notes
+* View recent notes
 * Edit existing notes
-* Delete existing notes
-* Search notes by keyword
-* Filter notes by category
-* Filter notes by date range
+* Delete notes
+* Search by keyword
+* Filter by category
+* Filter by date range
 
-### Security Features
+### Authentication & Security
 
-* Mark notes as private
-* Protect private notes using a four-digit PIN
-* Store PIN values as hashed data
-* Configure and update a recovery email address
-
-### Reporting
-
-Generate application statistics including:
-
-* Total number of notes
-* Number of notes per category
-* Most frequently used category
-* Oldest note date
-* Most recent note date
-* Average note length
+* JWT authentication
+* Refresh token support
+* Secure user login
+* User-specific note isolation
+* Local Room cache for offline-friendly performance
 
 ### User Experience
 
-* Material Design interface
-* Portrait and landscape layouts
-* RecyclerView note displays
-* Responsive search and filtering
+* Material Design 3 interface
+* Responsive layouts
+* Light and Dark Mode support
+* RecyclerView-based note browsing
+* Voice input integration
 
 ---
 
-## Technology Stack
+# Architecture
+
+```text
+Android App (Java)
+        │
+        │ Retrofit
+        ▼
+Spring Boot REST API
+        │
+        ├── PostgreSQL
+        ├── pgvector
+        └── Ollama (LLM)
+```
+
+The Android application serves as a lightweight client responsible for:
+
+* Authentication
+* Note management
+* Voice input
+* Local caching
+* Displaying AI responses
+
+AI inference, semantic search, embeddings, and data persistence are handled by the backend.
+
+---
+
+# Technology Stack
+
+### Android
 
 * Java
 * Android SDK
 * Android Studio
-* Room Persistence Library
-* SQLite (via Room)
+* Material Design 3
 * RecyclerView
-* Material Design Components
+* Retrofit
+* Room Persistence Library
 * SpeechRecognizer API
+
+### Backend Integration
+
+* Spring Boot REST API
+* JWT Authentication
+* PostgreSQL
+* pgvector
+* Docker
 
 ---
 
-## Android Deployment Information
+# Android Deployment
 
 | Item                    | Value                |
 | ----------------------- | -------------------- |
 | Minimum Android Version | Android 8.0 (API 26) |
 | Target Android Version  | Android 16 (API 36)  |
-| Programming Language    | Java                 |
-| Database                | Room (SQLite)        |
+| Language                | Java                 |
+| Networking              | Retrofit             |
+| Local Database          | Room (SQLite Cache)  |
 
 ---
 
-## Installation
+# Screens
 
-1. Download the Pigeon Post APK file.
-2. Transfer the APK file to an Android device if necessary.
-3. Open the APK file.
-4. If prompted, allow installation from unknown sources.
-5. Select **Install**.
-6. Wait for installation to complete.
-7. Select **Open** to launch the application.
+The application currently includes:
 
----
-
-## Application Usage
-
-### Creating a Note
-
-1. Open the application.
-2. Select a category from the Category dropdown menu.
-3. Enter note content into the Note field.
-4. Optionally enable the **Private Note** checkbox.
-5. Select **Save Note**.
-6. The note will be stored and displayed in the Recent Notes section.
-
-### Creating a Note with Speech-to-Text
-
-1. Open the application.
-2. Select **Record Note**.
-3. Grant microphone permission if prompted.
-4. Speak the desired note content.
-5. Review the generated text.
-6. Select **Save Note**.
-
-### Creating a Security Profile
-
-A security profile is required when creating the first private note.
-
-1. Enable **Private Note**.
-2. Select **Save Note**.
-3. Enter a valid recovery email address.
-4. Enter a four-digit PIN.
-5. Select **Save**.
-
-### Viewing Private Notes
-
-1. Select a private note.
-2. Enter the configured four-digit PIN.
-3. Select **Unlock**.
-4. The note contents will be displayed.
-
-### Searching Notes
-
-1. Select **Search Notes**.
-2. Enter a keyword.
-3. Optionally select a category filter.
-4. Optionally select a start date and end date.
-5. Search results update automatically.
-
-### Editing Notes
-
-1. Open the Search screen.
-2. Select a note.
-3. Select **Edit**.
-4. Modify the category, content, or privacy setting.
-5. Select **Save**.
-
-### Deleting Notes
-
-1. Open the Search screen.
-2. Locate the note to be removed.
-3. Select the note to open the note details dialog.
-4. Select **Delete**.
-5. Review the confirmation message.
-6. Select **Delete** again to confirm the action.
-7. The note will be permanently removed from the database.
-8. The search results and recent notes lists will automatically update.
-
-Private notes require successful PIN verification before deletion is permitted.
-
-### Managing Recovery Email
-
-1. Open the Profile screen.
-2. Review the currently stored recovery email.
-3. Select **Update Email**.
-4. Enter a new email address.
-5. Select **Save**.
-
-### Running Reports
-
-1. Open the Search screen.
-2. Select **Run Report**.
-3. Review the generated statistics.
-
-The report displays:
-
-* Total notes
-* Notes per category
-* Most used category
-* Oldest note date
-* Newest note date
-* Average note length
+* Login
+* Home Dashboard
+* AI Assistant
+* Search
+* Profile
+* Reports
 
 ---
 
-## Project Structure
+# Installation
+
+1. Download the latest signed APK.
+2. Transfer the APK to an Android device if necessary.
+3. Install the application.
+4. Sign in using your PigeonPost account.
+5. Begin creating notes and interacting with the AI assistant.
+
+---
+
+# AI Workflow
+
+```text
+User asks a question
+        │
+        ▼
+Android App
+        │
+        ▼
+Spring Boot API
+        │
+        ▼
+Semantic Search (pgvector)
+        │
+        ▼
+Relevant Notes Retrieved
+        │
+        ▼
+LLM Generates Response
+        │
+        ▼
+Answer + Source Notes Returned
+```
+
+Each AI response includes the supporting notes used during generation, allowing users to understand why the model produced its answer.
+
+---
+
+# Project Structure
 
 ```text
 com.pigeonpost.android
 │
 ├── adapters
-│   └── RecentNotesAdapter.java
-│
 ├── data
 │   ├── dao
-│   │   ├── NoteDao.java
-│   │   └── ProfileDao.java
-│   │
 │   ├── db
-│   │   └── AppDatabase.java
-│   │
-│   └── entities
-│       ├── Note.java
-│       ├── Profile.java
-│       └── CategoryCount.java
+│   ├── entities
+│   ├── remote
+│   └── repository
 │
 ├── ui
-│   ├── MainActivity.java
-│   ├── SearchActivity.java
-│   ├── ProfileActivity.java
-│   └── ReportActivity.java
 │
-└── utils
-    └── SecurityUtils.java
+├── security
+│
+├── utils
+│
+└── services
 ```
 
 ---
 
-## Testing
+# Screenshots
 
-The application was tested using:
+The portfolio website contains screenshots, architecture diagrams, and demonstration videos of the application.
+
+---
+
+# Backend
+
+The backend repository is private.
+
+It includes:
+
+* Spring Boot
+* Spring Security
+* JWT Authentication
+* PostgreSQL
+* pgvector
+* Ollama
+* Docker deployment
+* Cloudflare Tunnel
+* Retrieval-Augmented Generation (RAG)
+
+---
+
+# Testing
+
+The application has been validated using:
 
 * Android Emulator
-* Physical Android device
+* Physical Android devices
 * Functional testing
-* Validation testing
-* Unit testing
-* Portrait and landscape layout testing
-
-Features tested include:
-
-* Note creation
-* Speech-to-text functionality
-* Database operations
-* Search functionality
-* Category filtering
-* Date filtering
-* Private note security
-* Recovery email validation
-* Report generation
+* Authentication testing
+* REST API integration testing
+* AI workflow testing
+* Voice input testing
+* CRUD testing
 
 ---
 
-## Future Enhancements
+# Future Enhancements
 
-Potential future enhancements include:
+Planned improvements include:
 
-* Cloud synchronization
-* Data export functionality
-* Backup and restore capabilities
-* Additional reporting options
-* Custom user-defined categories
-* Rich text formatting
+* Conversation memory
+* Streaming AI responses
+* AI-generated note summaries
+* User-defined categories
+* Image attachments
 * Multi-device synchronization
+* Push notifications
+* End-to-end encryption for private notes
 
 ---
 
-## Repository
+# Portfolio
 
-Git Repository:
+Portfolio
 
-https://gitlab.com/wgu-gitlab-environment/student-repos/amodyma/d424-software-engineering-capstone/-/tree/working_branch?ref_type=heads
+https://artresume.web.app
 
 ---
 
-## Author
+# Author
 
-Arthur Modyman IV - SID# 012240736
+**Arthur Modyman IV**
 
-Software Engineering Capstone Project
+Bachelor of Science — Software Engineering
 
 Western Governors University
 
 ---
 
-## License
+# License
 
-This project was developed for educational purposes as part of the WGU Software Engineering Capstone.
+This repository contains the Android client for PigeonPost and is intended for portfolio and educational demonstration purposes. The backend implementation remains private.
+
