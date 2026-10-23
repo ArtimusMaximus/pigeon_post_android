@@ -170,15 +170,32 @@
             android:layout_height="wrap_content"
             android:text="Private note" />
 
+        <LinearLayout
+        android:id="@+id/voiceButtonRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnRecordNote"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:minHeight="36dp"
-            android:text="Record Note"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/btn_record_note"
             app:cornerRadius="18dp"
             app:icon="@drawable/microphone_svg"
             app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClearNote"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minHeight="48dp"
+            android:text="@string/btn_clear_note"
+            android:enabled="false" />
+    </LinearLayout>
 
         <LinearLayout
             android:id="@+id/buttonRow"

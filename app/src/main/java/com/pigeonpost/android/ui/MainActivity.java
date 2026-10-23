@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -75,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
+    private boolean recognitionInProgress;
     private TextInputEditText editNote;
     private RecentNotesAdapter recentNotesAdapter;
     private RecyclerView recyclerRecentNotes;
@@ -554,6 +557,22 @@ public class MainActivity extends AppCompatActivity {
     private void setupSpeechRecognizer() {
         MaterialButton recordButton = findViewById(R.id.btnRecordNote);
 
+        MaterialButton clearButton = findViewById(R.id.btnClearNote);
+        clearButton.setOnClickListener(view -> {
+            speechRecognizer.cancel();
+            recognitionInProgress = false;
+            editNote.setText("");
+            resetTextAndTint(recordButton);
+        });
+        editNote.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateVoiceControls(recordButton, clearButton);
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+        updateVoiceControls(recordButton, clearButton);
+
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
 
         speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -588,7 +607,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onEndOfSpeech() {
                 Toast.makeText(MainActivity.this, "Processing...", Toast.LENGTH_SHORT).show();
-                resetTextAndTint(recordButton);
             }
 
             @Override
@@ -599,14 +617,19 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onResults(Bundle results) {
+                if (!recognitionInProgress) {
+                    return;
+                }
                 ArrayList<String> matches =
                         results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
 
                 if (matches != null && !matches.isEmpty()) {
                     String spokenText = matches.get(0).trim();
-                    boolean categoryFound = false;
+                    boolean hasExistingText = editNote.getText() != null
+                            && editNote.getText().length() > 0;
 
-                    for (int i = 0; i < categories.size(); i++) {
+                    // Category prefixes apply only to the first segment of a new note.
+                    for (int i = 0; !hasExistingText && i < categories.size(); i++) {
                         Category category = categories.get(i);
                         String categoryName = category.getName();
 
@@ -617,17 +640,20 @@ public class MainActivity extends AppCompatActivity {
                         ) {
                             categorySpinner.setSelection(i);
 
-                            editNote.setText(
-                                    spokenText.substring(categoryName.length()).trim()
-                            );
-
-                            categoryFound = true;
+                            spokenText = spokenText.substring(categoryName.length()).trim();
                             break;
                         }
                     }
 
-                    if (!categoryFound) {
-                        editNote.setText(spokenText);
+                    if (!spokenText.isEmpty()) {
+                        Editable text = editNote.getText();
+                        if (text != null) {
+                            if (text.length() > 0 && !Character.isWhitespace(text.charAt(text.length() - 1))) {
+                                text.append(" ");
+                            }
+                            text.append(spokenText);
+                            editNote.setSelection(text.length());
+                        }
                     }
                 }
 
@@ -643,7 +669,6 @@ public class MainActivity extends AppCompatActivity {
 
         recordButton.setOnClickListener(v -> {
             startSpeechToText();
-            setTextAndTint(recordButton);
         });
     }
 
@@ -717,6 +742,11 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        if (recognitionInProgress) {
+            return;
+        }
+        recognitionInProgress = true;
+        setTextAndTint(findViewById(R.id.btnRecordNote));
         speechRecognizer.startListening(speechRecognizerIntent);
     }
 
@@ -968,8 +998,17 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    private void updateVoiceControls(MaterialButton recordButton, MaterialButton clearButton) {
+        boolean hasText = editNote.getText() != null && editNote.getText().length() > 0;
+        clearButton.setEnabled(hasText);
+        if (!recognitionInProgress) {
+            recordButton.setText(hasText ? R.string.btn_add_voice : R.string.btn_record_note);
+        }
+    }
+
     public void resetTextAndTint(MaterialButton recordButton) {
-        recordButton.setText(R.string.btn_record_note);
+        recognitionInProgress = false;
+        updateVoiceControls(recordButton, findViewById(R.id.btnClearNote));
         recordButton.setIconTint(
                 ColorStateList.valueOf(
                         ContextCompat.getColor(this, R.color.white)
