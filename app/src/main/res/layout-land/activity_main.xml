@@ -28,8 +28,8 @@
 
             <ImageView
                 android:id="@+id/imgAppHeader"
-                android:layout_width="72dp"
-                android:layout_height="72dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:contentDescription="Homing Pigeon app icon"
                 android:src="@mipmap/ic_launcher" />
 
