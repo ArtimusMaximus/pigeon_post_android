@@ -182,25 +182,43 @@
         android:layout_marginTop="12dp"
         android:clipToPadding="false"
         android:paddingBottom="12dp"
-        app:layout_constraintBottom_toTopOf="@id/btnRecordNote"
+        app:layout_constraintBottom_toTopOf="@id/voiceButtonRow"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/txtRecentNotesTitle"
         tools:listitem="@android:layout/simple_list_item_2" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnRecordNote"
+    <LinearLayout
+        android:id="@+id/voiceButtonRow"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:layout_marginBottom="16dp"
-        android:minHeight="56dp"
-        android:text="Record Note"
-        app:cornerRadius="18dp"
-        app:icon="@drawable/microphone_svg"
-        app:iconGravity="textStart"
         app:layout_constraintBottom_toTopOf="@id/buttonRow"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        >
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRecordNote"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/btn_record_note"
+            app:cornerRadius="18dp"
+            app:icon="@drawable/microphone_svg"
+            app:iconGravity="textStart" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClearNote"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minHeight="48dp"
+            android:text="@string/btn_clear_note"
+            android:enabled="false" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/buttonRow"

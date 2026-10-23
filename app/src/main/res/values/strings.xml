@@ -5,6 +5,8 @@
     <string name="app_sub_title">Pigeon Post</string>
 <!--    BUTTONS-->
     <string name="btn_record_note">Record Note</string>
+    <string name="btn_add_voice">Add more by voice</string>
+    <string name="btn_clear_note">Clear</string>
     <string name="btn_save_note">Save Note</string>
 
     <!--    MISC-->
