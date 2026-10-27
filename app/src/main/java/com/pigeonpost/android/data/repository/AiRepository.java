@@ -6,9 +6,6 @@ import com.pigeonpost.android.data.remote.dto.AiAnswerResponse;
 import com.pigeonpost.android.data.remote.dto.AiQuestionRequest;
 import com.pigeonpost.android.network.RetrofitClient;
 
-import java.util.List;
-import java.util.Collections;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -26,11 +23,6 @@ public class AiRepository {
             String question,
             AiCallback callback
     ) {
-        askQuestion(question, "STANDARD", Collections.emptyList(), callback);
-    }
-
-    public void askQuestion(String question, String answerMode, List<Long> selectedSourceIds,
-                            AiCallback callback) {
         if (question == null || question.trim().isEmpty()) {
             callback.onError(
                     -1,
@@ -41,7 +33,7 @@ public class AiRepository {
 
         AiQuestionRequest request =
                 new AiQuestionRequest(
-                        question.trim(), answerMode, selectedSourceIds
+                        question.trim()
                 );
 
         RetrofitClient
