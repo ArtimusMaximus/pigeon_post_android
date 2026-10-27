@@ -8,6 +8,12 @@ import android.speech.tts.TextToSpeech;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.Spinner;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
+import android.text.TextWatcher;
+import android.text.Editable;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -33,6 +39,13 @@ import java.util.Locale;
 public class AiActivity extends AppCompatActivity {
 
     private EditText questionInput;
+    private Spinner answerModeSpinner;
+    private Button chooseSourcesButton;
+    private boolean requestInProgress;
+    private String responseQuestion;
+    private String responseMode;
+    private final List<AiSourceResponse> responseSources = new ArrayList<>();
+    private static final String[] ANSWER_MODES = {"STANDARD", "EVENT_DATE", "RECORDED_DATE"};
     private Button speakQuestionButton;
     private Button askAiButton;
     private Button speakAnswerButton;
@@ -68,6 +81,11 @@ public class AiActivity extends AppCompatActivity {
         initializeSpeechRecognition();
         initializeTextToSpeech();
 
+        questionInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { updateSourceChoice(); }
+            @Override public void afterTextChanged(Editable s) {}
+        });
         aiRepository = new AiRepository(this);
 
         speakQuestionButton.setOnClickListener(
@@ -100,6 +118,19 @@ public class AiActivity extends AppCompatActivity {
 
 
     private void initializeViews() {
+        answerModeSpinner = findViewById(R.id.answerModeSpinner);
+        ArrayAdapter<CharSequence> modes = ArrayAdapter.createFromResource(this,
+                R.array.ai_answer_modes, android.R.layout.simple_spinner_item);
+        modes.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        answerModeSpinner.setAdapter(modes);
+        chooseSourcesButton = findViewById(R.id.chooseSourcesButton);
+        chooseSourcesButton.setOnClickListener(view -> chooseSources());
+        answerModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateSourceChoice();
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) { updateSourceChoice(); }
+        });
         questionInput =
                 findViewById(R.id.questionInput);
 
@@ -129,6 +160,55 @@ public class AiActivity extends AppCompatActivity {
 
         sourcesRecyclerView =
                 findViewById(R.id.sourcesRecyclerView);
+    }
+
+    private String selectedMode() {
+        return ANSWER_MODES[Math.max(0, answerModeSpinner.getSelectedItemPosition())];
+    }
+
+    private void updateSourceChoice() {
+        if (chooseSourcesButton == null || questionInput == null) return;
+        boolean available = !requestInProgress && !responseSources.isEmpty()
+                && responseQuestion != null && responseQuestion.equals(questionInput.getText().toString().trim())
+                && responseMode.equals(selectedMode()) && !"STANDARD".equals(responseMode);
+        chooseSourcesButton.setVisibility(available ? View.VISIBLE : View.GONE);
+    }
+
+    private void chooseSources() {
+        if (requestInProgress || responseSources.isEmpty()) return;
+        String[] labels = new String[responseSources.size()];
+        boolean[] checked = new boolean[labels.length];
+        for (int i = 0; i < labels.length; i++) {
+            AiSourceResponse source = responseSources.get(i);
+            String preview = source.getContent() == null ? "" : source.getContent();
+            if (preview.length() > 220) preview = preview.substring(0, 220) + "…";
+            labels[i] = getString(R.string.ai_source_choice, source.getNoteId(),
+                    source.getTitle() == null ? "" : source.getTitle(),
+                    preview,
+                    source.getCreatedAt() == null ? getString(R.string.ai_date_unavailable) : source.getCreatedAt());
+        }
+        androidx.appcompat.app.AlertDialog dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.ai_choose_sources)
+                .setMultiChoiceItems(labels, checked, (view, which, selected) -> checked[which] = selected)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.ai_ask_selected, null).create();
+        dialog.setOnShowListener(ignored -> dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(view -> {
+                    List<Long> ids = new ArrayList<>();
+                    for (int i = 0; i < checked.length; i++) {
+                        if (checked[i] && responseSources.get(i).getNoteId() != null)
+                            ids.add(responseSources.get(i).getNoteId());
+                    }
+                    if (ids.isEmpty()) {
+                        Toast.makeText(this, R.string.ai_select_at_least_one, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    String question = responseQuestion;
+                    String mode = responseMode;
+                    dialog.dismiss();
+                    submitQuestion(question, mode, ids);
+                }));
+        dialog.show();
     }
 
     private void initializeSourcesRecyclerView() {
@@ -279,6 +359,10 @@ public class AiActivity extends AppCompatActivity {
             return;
         }
 
+        submitQuestion(question, selectedMode(), java.util.Collections.emptyList());
+    }
+
+    private void submitQuestion(String question, String mode, List<Long> selectedIds) {
         pendingAutoSpeak = false;
 
         stopSpeaking();
@@ -287,7 +371,7 @@ public class AiActivity extends AppCompatActivity {
         setLoadingState(true);
 
         aiRepository.askQuestion(
-                question,
+                question, mode, selectedIds,
                 new AiRepository.AiCallback() {
 
                     @Override
@@ -297,7 +381,12 @@ public class AiActivity extends AppCompatActivity {
                         runOnUiThread(() -> {
                             setLoadingState(false);
 
+                            responseQuestion = question;
+                            responseMode = mode;
+                            responseSources.clear();
+                            if (response.getSources() != null) responseSources.addAll(response.getSources());
                             displayResponse(response);
+                            updateSourceChoice();
                         });
                     }
 
@@ -443,6 +532,9 @@ public class AiActivity extends AppCompatActivity {
     }
 
     private void setLoadingState(boolean loading) {
+        requestInProgress = loading;
+        answerModeSpinner.setEnabled(!loading);
+        updateSourceChoice();
         aiProgressBar.setVisibility(
                 loading
                         ? View.VISIBLE
@@ -462,6 +554,10 @@ public class AiActivity extends AppCompatActivity {
     }
 
     private void hidePreviousAnswer() {
+        responseSources.clear();
+        responseQuestion = null;
+        responseMode = null;
+        chooseSourcesButton.setVisibility(View.GONE);
         pendingAutoSpeak = false;
 
         answerLabel.setVisibility(View.GONE);

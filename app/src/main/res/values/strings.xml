@@ -14,4 +14,16 @@
     <string name="read_aloud">Read Aloud</string>
     <string name="read_aloud_auto">Read answers aloud automatically</string>
 
+    <string name="ai_question_type">Question type</string>
+    <string-array name="ai_answer_modes">
+        <item>General question</item>
+        <item>When something happened</item>
+        <item>When a note was recorded</item>
+    </string-array>
+    <string name="ai_choose_and_retry">Choose source notes and ask again</string>
+    <string name="ai_choose_sources">Choose relevant notes</string>
+    <string name="ai_ask_selected">Ask with selected notes</string>
+    <string name="ai_select_at_least_one">Choose at least one note.</string>
+    <string name="ai_date_unavailable">Unavailable</string>
+    <string name="ai_source_choice">Note %1$d — %2$s\n%3$s\nRecorded: %4$s</string>
 </resources>
