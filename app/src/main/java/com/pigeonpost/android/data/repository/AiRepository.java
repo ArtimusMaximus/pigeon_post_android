@@ -37,7 +37,7 @@ public class AiRepository {
                 );
 
         RetrofitClient
-                .getApiService(applicationContext)
+                .getAiApiService(applicationContext)
                 .askAi(request)
                 .enqueue(new Callback<AiAnswerResponse>() {
 
@@ -93,10 +93,10 @@ public class AiRepository {
                             Call<AiAnswerResponse> call,
                             Throwable throwable
                     ) {
-                        String message =
-                                throwable.getMessage() == null
-                                        ? "Unable to reach the AI service."
-                                        : throwable.getMessage();
+                        String message = throwable instanceof java.io.InterruptedIOException
+                                ? "The AI answer took too long. Please try again shortly."
+                                : throwable.getMessage() == null
+                                    ? "Unable to reach the AI service." : throwable.getMessage();
 
                         callback.onError(
                                 -1,

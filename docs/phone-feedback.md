@@ -60,3 +60,34 @@ No APK was produced by the agent.
 
 Manual phone tests and Android Studio build remain pending. The backend live model
 check used only synthetic restaurant notes; no personal account/data was accessed.
+
+## Ask AI timeout follow-up (1.1.1, versionCode 3)
+
+User reports timeouts only on Ask AI after deployment. Code inspection found the
+AI call using the ordinary OkHttp client without custom timeouts. OkHttp 4.12.0
+has a 10-second default read limit, while prior measured multi-note queries took
+longer. This is a confirmed client-policy mismatch and a likely cause; remote
+server/proxy/Ollama health has not been established from production logs.
+
+Ask AI now uses a separately cached Retrofit service derived from the authenticated
+client: read limit 120 seconds, whole-call deadline 150 seconds. Connection/write
+limits, token authentication/refresh behavior, pool and dispatcher are preserved.
+Other API requests retain their original deadlines. Timeout messages are readable.
+This does not make inference faster or bypass server/proxy timeouts.
+
+Two standalone Java 11/JUnit tests against actual OkHttp 4.12.0 passed: retained
+ordinary deadlines/auth/pool settings and a localhost delayed-response test in
+which the ordinary short-deadline request times out while the AI client succeeds.
+Changed client, Retrofit wiring and repository Java sources also compile against
+SDK 34 and existing release app classes into a temporary directory. This targeted
+check is not a full APK/Gradle build. No production requests or database writes.
+
+Build signed release APK 1.1.1/code 3 in Android Studio with the installed release
+key, install as update and retry the same question. No additional backend deployment
+is needed for this client-only change. Server remains compatible with 536f246.
+If failure persists, capture `docker compose logs -f pigeonpost-api` in the server's
+API Compose folder while asking once, and record elapsed time/exact phone error.
+An HTTP 504 or another gateway limit needs separate server/proxy investigation;
+this patch does not assume those are healthy. Don't expose JWT/database secrets
+when sharing logs. Preexisting release artifacts and URL whitespace change remain
+outside this commit.

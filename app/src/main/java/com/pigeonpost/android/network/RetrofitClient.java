@@ -16,6 +16,7 @@ public final class RetrofitClient {
 //    private static final String BASE_URL =  "http://10.0.2.2:8088/"; // DEV using docker compose
      private static final String BASE_URL = "https://pigeonpost.es9.app/"; // PROD
     private static volatile ApiService apiService;
+    private static volatile ApiService aiApiService;
 
 
     private RetrofitClient() {
@@ -34,6 +35,12 @@ public final class RetrofitClient {
         }
 
         return apiService;
+    }
+
+    public static ApiService getAiApiService(Context context) {
+        // Publication of apiService happens after both services are initialized.
+        getApiService(context);
+        return aiApiService;
     }
 
     private static ApiService createApiService(Context context) {
@@ -90,6 +97,10 @@ public final class RetrofitClient {
                         )
                         .build();
 
+        aiApiService=retrofit.newBuilder()
+                .client(AiHttpClient.from(authenticatedHttpClient))
+                .build()
+                .create(ApiService.class);
         return retrofit.create(ApiService.class);
     }
 
