@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.card.MaterialCardView;
 import com.pigeonpost.android.R;
+import com.pigeonpost.android.utils.ReadableDateText;
 import com.pigeonpost.android.data.remote.dto.AiSourceResponse;
 
 import java.util.ArrayList;
@@ -61,13 +62,9 @@ public class AiSourceAdapter
         AiSourceResponse source =
                 sources.get(position);
 
-//        String title = source.getTitle();
-//
-//        if (title == null || title.trim().isEmpty()) {
-//            title = "Note " + source.getNoteId();
-//        }
-//
-//        holder.sourceTitle.setText(title);
+        String title=source.getTitle();
+        holder.sourceTitle.setText(title==null || title.trim().isEmpty()?"Note "+source.getNoteId():title);
+        holder.sourceDate.setText(shortDate(source.getCreatedAt()));
 
         String content = source.getContent();
 
@@ -183,28 +180,16 @@ public class AiSourceAdapter
 
         return Color.parseColor("#EF5350");
     }
-    private String formatDate(
-            String createdAt
-    ) {
-        if (createdAt == null || createdAt.trim().isEmpty()) {
-            return "";
-        }
-
+    private String shortDate(String value) {
+        if(value==null) return "";
         try {
-            java.time.OffsetDateTime dateTime =
-                    java.time.OffsetDateTime.parse(createdAt);
-
-            java.time.format.DateTimeFormatter formatter =
-                    java.time.format.DateTimeFormatter.ofPattern(
-                            "MMM d, yyyy",
-                            Locale.getDefault()
-                    );
-
-            return dateTime.format(formatter);
-
-        } catch (java.time.format.DateTimeParseException exception) {
-            return "";
-        }
+            return java.time.OffsetDateTime.parse(value).atZoneSameInstant(java.time.ZoneId.systemDefault())
+                    .format(java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+                            .withLocale(Locale.getDefault()));
+        } catch(java.time.DateTimeException invalid) { return ""; }
+    }
+    private String formatDate(String value) {
+        return value==null?"":ReadableDateText.format(value);
     }
     private void showSourceDetailsDialog(
             View view,
@@ -232,7 +217,9 @@ public class AiSourceAdapter
                 );
 
         String message =
-                "Category\n"
+                "Note " + source.getNoteId() + "\n" + (source.getTitle()==null?"":source.getTitle())
+                        + "\n\n" + (source.getContent()==null?"":source.getContent())
+                        + "\n\nCategory\n"
                         + category
                         + "\n\nCreated\n"
                         + (createdDate.isEmpty()
@@ -270,7 +257,7 @@ public class AiSourceAdapter
     static class SourceViewHolder
             extends RecyclerView.ViewHolder {
 
-//        private final TextView sourceTitle;
+        private final TextView sourceTitle;
         private final TextView sourceContent;
         private final TextView sourceMatch;
         private final TextView sourceCategory;
@@ -283,10 +270,7 @@ public class AiSourceAdapter
         ) {
             super(itemView);
 
-//            sourceTitle =
-//                    itemView.findViewById(
-//                            R.id.sourceTitle
-//                    );
+            sourceTitle=itemView.findViewById(R.id.sourceTitle);
 
             sourceContent =
                     itemView.findViewById(

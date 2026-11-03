@@ -3,6 +3,8 @@ package com.pigeonpost.android.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.view.View;
@@ -21,6 +23,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.pigeonpost.android.R;
+import com.pigeonpost.android.utils.ReadableDateText;
+import com.pigeonpost.android.utils.VoiceText;
 import com.pigeonpost.android.adapters.AiSourceAdapter;
 import com.pigeonpost.android.data.remote.dto.AiAnswerResponse;
 import com.pigeonpost.android.data.remote.dto.AiSourceResponse;
@@ -43,6 +47,10 @@ public class AiActivity extends AppCompatActivity {
     private TextView sourcesLabel;
     private RecyclerView sourcesRecyclerView;
 
+    private TextView relatedSourcesLabel;
+    private RecyclerView relatedSourcesRecyclerView;
+    private AiSourceAdapter relatedSourceAdapter;
+
     private AiRepository aiRepository;
     private AiSourceAdapter aiSourceAdapter;
 
@@ -64,6 +72,12 @@ public class AiActivity extends AppCompatActivity {
         }
 
         initializeViews();
+        questionInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s,int start,int count,int after) {}
+            @Override public void onTextChanged(CharSequence s,int start,int before,int count) {updateQuestionVoiceButton();}
+            @Override public void afterTextChanged(Editable s) {}
+        });
+        updateQuestionVoiceButton();
         initializeSourcesRecyclerView();
         initializeSpeechRecognition();
         initializeTextToSpeech();
@@ -127,8 +141,9 @@ public class AiActivity extends AppCompatActivity {
         sourcesLabel =
                 findViewById(R.id.sourcesLabel);
 
-        sourcesRecyclerView =
-                findViewById(R.id.sourcesRecyclerView);
+        sourcesRecyclerView = findViewById(R.id.sourcesRecyclerView);
+        relatedSourcesLabel=findViewById(R.id.relatedSourcesLabel);
+        relatedSourcesRecyclerView=findViewById(R.id.relatedSourcesRecyclerView);
     }
 
     private void initializeSourcesRecyclerView() {
@@ -143,6 +158,10 @@ public class AiActivity extends AppCompatActivity {
         );
 
         sourcesRecyclerView.setNestedScrollingEnabled(false);
+        relatedSourceAdapter=new AiSourceAdapter();
+        relatedSourcesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        relatedSourcesRecyclerView.setAdapter(relatedSourceAdapter);
+        relatedSourcesRecyclerView.setNestedScrollingEnabled(false);
     }
 
     private void initializeSpeechRecognition() {
@@ -171,7 +190,7 @@ public class AiActivity extends AppCompatActivity {
                                 return;
                             }
 
-                            questionInput.setText(results.get(0));
+                            questionInput.setText(VoiceText.append(questionInput.getText().toString(),results.get(0)));
 
                             questionInput.setSelection(
                                     questionInput.getText().length()
@@ -335,6 +354,7 @@ public class AiActivity extends AppCompatActivity {
 
         displayAnswer(response.getAnswer());
         displaySources(response.getSources());
+        displayRelatedSources(response.getRelatedSources(),response.getSources());
     }
 
     private void displayAnswer(String answer) {
@@ -348,7 +368,7 @@ public class AiActivity extends AppCompatActivity {
                     "PigeonPost AI did not return an answer.";
         }
 
-        answerText.setText(safeAnswer);
+        answerText.setText(ReadableDateText.format(safeAnswer));
 
         answerLabel.setVisibility(View.VISIBLE);
         answerText.setVisibility(View.VISIBLE);
@@ -387,6 +407,21 @@ public class AiActivity extends AppCompatActivity {
         );
     }
 
+    private void updateQuestionVoiceButton() {
+        boolean hasText=questionInput.getText()!=null && !questionInput.getText().toString().trim().isEmpty();
+        speakQuestionButton.setText(hasText?R.string.btn_add_voice:R.string.speak_question);
+    }
+
+    private void displayRelatedSources(List<AiSourceResponse> related,List<AiSourceResponse> primary) {
+        java.util.Set<Long> seen=new java.util.HashSet<>();
+        if(primary!=null) for(var source:primary) seen.add(source.getNoteId());
+        var extra=new ArrayList<AiSourceResponse>();
+        if(related!=null) for(var source:related) if(seen.add(source.getNoteId())) extra.add(source);
+        relatedSourceAdapter.setSources(extra);
+        int visibility=extra.isEmpty()?View.GONE:View.VISIBLE;
+        relatedSourcesLabel.setVisibility(visibility);relatedSourcesRecyclerView.setVisibility(visibility);
+    }
+
     private void speakAnswer() {
         String answer =
                 answerText.getText()
@@ -419,7 +454,7 @@ public class AiActivity extends AppCompatActivity {
         pendingAutoSpeak = false;
 
         textToSpeech.speak(
-                answer,
+                ReadableDateText.format(answer),
                 TextToSpeech.QUEUE_FLUSH,
                 null,
                 "pigeonpost-ai-answer"
@@ -474,6 +509,9 @@ public class AiActivity extends AppCompatActivity {
         answerText.setText("");
 
         aiSourceAdapter.setSources(null);
+        relatedSourceAdapter.setSources(null);
+        relatedSourcesLabel.setVisibility(View.GONE);
+        relatedSourcesRecyclerView.setVisibility(View.GONE);
     }
 
     private void hideKeyboard() {

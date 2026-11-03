@@ -27,6 +27,13 @@
             android:background="@drawable/bg_ai_category"/>
 
         <TextView
+            android:id="@+id/sourceTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textStyle="bold"
+            android:textSize="15sp" />
+        <TextView
             android:id="@+id/sourceContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
